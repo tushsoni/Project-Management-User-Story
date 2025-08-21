@@ -9,9 +9,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
   <style>
@@ -65,6 +67,24 @@
    .kanban-column[data-status="done"] {
     border-color: #10b981;
    }
+   
+.modal-content {
+  max-height: 85vh;
+  width: 700px;
+  border-radius: 12px;       /* round all corners */
+  overflow: hidden;          /* ensure child scrollbars don’t break corners */
+  background: #fff;
+}
+
+.goal-box {
+  max-height: 120px;
+  overflow-y: auto;
+  padding: 8px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+}
+
 
    .kanban-column.drag-over {
     border-color: #4f46e5;
@@ -1044,7 +1064,7 @@ function getTypeIcon(type) {
 																
 																</label>
 																<select id="ticketAssignee" name="assignee" class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow">
-																	<option value="">Select Assignee</option>
+																	<required value="">Select Assignee</option>
                         ${assigneeOptions}
                     
 																
@@ -1338,142 +1358,622 @@ function getTypeIcon(type) {
     userToEdit = users.find(u => u.id === userId);
     openModal(getUserModalContent(userToEdit), saveUser);
    }
-   // New: Function to open log hours modal
-   function openTimeLogModal(ticketId) {
-    timeLogTicketId = ticketId;
-    openModal(getLogHoursModalContent(), saveTimeLog);
-   }
-   // Change: Added hideButtons parameter to hide edit and close buttons
-   function openTicketDetailsModal(ticketId, hideButtons = false) {
-    const ticket = tickets.find(t => t.id === ticketId);
-    if (!ticket) return;
-    const assigneeName = users.find(u => u.name === ticket.assignee)?.name || 'Unassigned';
-    const sprintName = sprints.find(s => s.id === ticket.sprintId)?.name || 'No Sprint';
-    const statusBg = {
-     'todo': 'bg-yellow-200',
-     'progress': 'bg-blue-200',
-     'review': 'bg-red-200',
-     'done': 'bg-green-200'
-    } [ticket.status] || 'bg-gray-200';
-    const priorityBg = {
-     'high': 'bg-red-200',
-     'medium': 'bg-yellow-200',
-     'low': 'bg-green-200'
-    } [ticket.priority] || 'bg-gray-200';
-    const modalContent = `
-                
-																				
-																				<div class="modal-content">
-																					<div class="flex justify-between items-start pb-4 border-b">
-																						<div>
-																							<h3 class="text-2xl font-bold text-gray-800 mb-2">${getTypeIcon(ticket.type)} ${ticket.title}</h3>
-																							<div class="flex items-center gap-2 text-sm text-gray-600">
-																								<span class="px-2 py-1 rounded-full text-xs font-semibold ${statusBg} text-gray-800">${ticket.status}</span>
-																								<span class="px-2 py-1 rounded-full text-xs font-semibold ${priorityBg} text-gray-800">${ticket.priority}</span>
-																							</div>
-																						</div>
-																						<button class="modal-close-btn">
-																							<i class="fas fa-times"></i>
-																						</button>
-																					</div>
-																					<div class="mt-6 text-gray-700">
-																						<p class="mb-4">${ticket.description || 'No description provided.'}</p>
-																						<div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm font-medium">
-																							<div>
-																								<strong>Assignee:</strong> ${assigneeName}
-																							
-																							</div>
-																							<div>
-																								<strong>Sprint:</strong> ${sprintName}
-																							
-																							</div>
-																							<div>
-																								<strong>Due Date:</strong> ${formatDate(ticket.dueDate)}
-																							
-																							</div>
-																							<div>
-																								<strong>Time Logged:</strong> ${ticket.timeLogged || 0}h
-																							
-																							</div>
-																						</div>
-																					</div>
-            `;
-    openModal(modalContent, (e) => e.preventDefault());
-   }
-   // New: Function to open sprint details modal
-   function openSprintDetailsModal(sprintId) {
-    const sprint = sprints.find(s => s.id === sprintId);
-    if (!sprint) return;
-    const ticketsInSprint = tickets.filter(t => t.sprintId === sprint.id);
-    const ticketListHtml = ticketsInSprint.length > 0 ? ticketsInSprint.map(ticket => `
-                    
-																					
-																					<div class="flex justify-between items-center p-2 border-b last:border-b-0 hover:bg-gray-50">
-																						<span class="font-medium">${ticket.title}</span>
-																						<span class="text-sm text-gray-500">${ticket.status}</span>
-																					</div>
-                `).join('') : ' < p class = "text-center text-gray-500 py-4" > No tickets in this sprint. < /p>';
-    const modalContent = `
-                
-																					
-																					<div class="modal-content">
-																						<div class="flex justify-between items-start pb-4 border-b">
-																							<div>
-																								<h3 class="text-2xl font-bold text-gray-800 mb-1">${sprint.name}</h3>
-																								<p class="text-sm text-gray-600">${formatDate(sprint.startDate)} - ${formatDate(sprint.endDate)}</p>
-																							</div>
-																							<button class="modal-close-btn">
-																								<i class="fas fa-times"></i>
-																							</button>
-																						</div>
-																						<div class="mt-6 text-gray-700">
-																							<h4 class="font-bold mb-2">Goal:</h4>
-																							<p class="mb-4">${sprint.goal || 'No goal set.'}</p>
-																							<h4 class="font-bold mb-2">Tickets in Sprint (${ticketsInSprint.length}):</h4>
-																							<div class="max-h-60 overflow-y-auto border rounded-lg">
-                            ${ticketListHtml}
-                        </div>
-																						</div>
-																					</div>
-            `;
-    openModal(modalContent, (e) => e.preventDefault());
-   }
-   // New: Function to open user details modal
-   function openUserDetailsModal(userId) {
-    const user = users.find(u => u.id === userId);
-    if (!user) return;
-    const userTickets = tickets.filter(t => t.assignee === user.name);
-    const userTicketsHtml = userTickets.length > 0 ? userTickets.map(ticket => `
-                    
-																					
-																					<div class="flex justify-between items-center p-2 border-b last:border-b-0 hover:bg-gray-50">
-																						<span class="font-medium">${ticket.title}</span>
-																						<span class="text-sm text-gray-500">${ticket.status}</span>
-																					</div>
-                `).join('') : ' < p class = "text-center text-gray-500 py-4" > No tickets assigned to this user. < /p>';
-    const modalContent = `
-                
-																					
-																					<div class="modal-content">
-																						<div class="flex justify-between items-start pb-4 border-b">
-																							<div>
-																								<h3 class="text-2xl font-bold text-gray-800 mb-1">${user.name}</h3>
-																								<p class="text-sm text-gray-600">${user.email}</p>
-																							</div>
-																							<button class="modal-close-btn">
-																								<i class="fas fa-times"></i>
-																							</button>
-																						</div>
-																						<div class="mt-6 text-gray-700">
-																							<h4 class="font-bold mb-2">Assigned Tickets (${userTickets.length}):</h4>
-																							<div class="max-h-60 overflow-y-auto border rounded-lg">
-                            ${userTicketsHtml}
-                        </div>
-																						</div>
-																					</div>
-            `;
-    openModal(modalContent, (e) => e.preventDefault());
-   }
+  
+// Open Logged Hours Model
+  
+// New: Function to open log hours modal
+function openTimeLogModal(ticketId) {
+  timeLogTicketId = ticketId;
+  const ticket = tickets.find(t => t.id === ticketId);
+  if (!ticket) {
+    showToast("Ticket not found.", "error");
+    return;
+  }
+
+  const existingLogs = ticket.timeLogs || [];
+
+  // Build logs list HTML
+  const logsHtml = existingLogs.length > 0
+    ? existingLogs.map(log => `
+        <div class="p-2 border-b last:border-0">
+          <p class="text-sm"><strong>${log.hours}h</strong> - ${log.comment || 'No comment'}</p>
+          <p class="text-xs text-gray-500">${new Date(log.timestamp).toLocaleString()}</p>
+        </div>
+      `).join('')
+    : `<p class="text-center text-gray-500 py-2">No hours logged yet.</p>`;
+
+  // Modal content
+  const modalContent = `
+    <div class="modal-content">
+      <div class="flex justify-between items-start pb-4 border-b">
+        <h3 class="text-xl font-bold">Log Hours</h3>
+        <button class="modal-close-btn"><i class="fas fa-times"></i></button>
+      </div>
+
+      <div class="mt-4">
+        <h4 class="font-semibold mb-2">Existing Logs:</h4>
+        <div class="max-h-40 overflow-y-auto border rounded-lg bg-gray-50">
+          ${logsHtml}
+        </div>
+      </div>
+
+      <form id="time-log-form" class="mt-4 space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-1">Hours *</label>
+          <input type="number" id="hours-logged" class="w-full border rounded px-3 py-2" min="0" step="0.1" required>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Comment</label>
+          <textarea id="log-comment" class="w-full border rounded px-3 py-2" rows="2"></textarea>
+        </div>
+        <div class="flex justify-end">
+          <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Save</button>
+        </div>
+      </form>
+    </div>
+  `;
+
+  openModal(modalContent, saveTimeLog);
+}
+
+   // Open Ticket Model
+   
+function openTicketDetailsModal(ticketId, hideButtons = false) {
+  const ticket = tickets.find(t => t.id === ticketId);
+  if (!ticket) return;
+
+  const assigneeName = users.find(u => u.name === ticket.assignee)?.name || 'Unassigned';
+  const sprintName = sprints.find(s => s.id === ticket.sprintId)?.name || 'No Sprint';
+
+  const statusBg = {
+    'todo': 'bg-yellow-200',
+    'progress': 'bg-blue-200',
+    'review': 'bg-red-200',
+    'done': 'bg-green-200'
+  }[ticket.status] || 'bg-gray-200';
+
+  const priorityBg = {
+    'high': 'bg-red-200',
+    'medium': 'bg-yellow-200',
+    'low': 'bg-green-200'
+  }[ticket.priority] || 'bg-gray-200';
+
+  const modalContent = `
+    <div class="modal-content">
+      <div class="flex justify-between items-start pb-4 border-b">
+        <div>
+          <h3 class="text-2xl font-bold text-gray-800 mb-2">${getTypeIcon(ticket.type)} ${ticket.title}</h3>
+          <div class="flex items-center gap-2 text-sm text-gray-600">
+            <span class="px-2 py-1 rounded-full text-xs font-semibold ${statusBg} text-gray-800">${ticket.status}</span>
+            <span class="px-2 py-1 rounded-full text-xs font-semibold ${priorityBg} text-gray-800">${ticket.priority}</span>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <button id="export-ticket-csv" class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm">Export CSV</button>
+          <button id="export-ticket-pdf" class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-sm">Export PDF</button>
+          <button class="modal-close-btn"><i class="fas fa-times"></i></button>
+        </div>
+      </div>
+
+      <div class="mt-6 text-gray-700">
+        <!-- Scrollable description -->
+        <div class="mb-4 max-h-40 overflow-y-auto border rounded p-2 bg-gray-50">
+          ${ticket.description || 'No description provided.'}
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm font-medium">
+          <div><strong>Assignee:</strong> ${assigneeName}</div>
+          <div><strong>Sprint:</strong> ${sprintName}</div>
+          <div><strong>Due Date:</strong> ${formatDate(ticket.dueDate)}</div>
+          <div><strong>Time Logged:</strong> ${ticket.timeLogged || 0}h</div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  openModal(modalContent, (e) => e.preventDefault());
+
+
+  // --- EXPORT HANDLERS ---
+  setTimeout(() => {
+    document.getElementById('export-ticket-csv').addEventListener('click', () => {
+      exportTicketCSV(ticket, assigneeName, sprintName);
+    });
+    document.getElementById('export-ticket-pdf').addEventListener('click', () => {
+      exportTicketPDF(ticket, assigneeName, sprintName);
+    });
+  }, 100);
+}
+
+// Export Ticket CSV
+function exportTicketCSV(ticket, assignee, sprintName) {
+  const header = ["ID", "Title", "Description", "Status", "Priority", "Assignee", "Sprint", "Due Date", "Logged Hours"];
+  const row = [
+    ticket.id,
+    `"${ticket.title}"`,
+    `"${ticket.description || "N/A"}"`,
+    ticket.status,
+    ticket.priority || "N/A",
+    assignee,
+    sprintName,
+    ticket.dueDate || "N/A",
+    ticket.timeLogged || 0
+  ];
+
+  const csv = [header.join(","), row.join(",")].join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `ticket_${ticket.id}.csv`;
+  a.click();
+
+  URL.revokeObjectURL(url);
+}
+
+// Export Ticket PDF
+function exportTicketPDF(ticket, assignee, sprintName) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  doc.setFontSize(16);
+  doc.text(`Ticket: ${ticket.title}`, 10, 15);
+
+  doc.setFontSize(12);
+  doc.text(`ID: ${ticket.id}`, 10, 25);
+  doc.text(`Status: ${ticket.status}`, 10, 35);
+  doc.text(`Priority: ${ticket.priority || "N/A"}`, 10, 45);
+  doc.text(`Assignee: ${assignee}`, 10, 55);
+  doc.text(`Sprint: ${sprintName}`, 10, 65);
+  doc.text(`Due Date: ${formatDate(ticket.dueDate)}`, 10, 75);
+  doc.text(`Time Logged: ${ticket.timeLogged || 0}h`, 10, 85);
+
+  // Wrap description
+  const description = ticket.description || "No description provided.";
+  const wrappedDesc = doc.splitTextToSize(`Description: ${description}`, 180);
+  doc.text(wrappedDesc, 10, 100);
+
+  doc.save(`ticket_${ticket.id}.pdf`);
+}
+
+   
+   
+// Open Sprint Modal
+
+function openSprintDetailsModal(sprintId) {
+  const sprint = sprints.find(s => s.id === sprintId);
+  if (!sprint) return;
+
+  const ticketsInSprint = tickets.filter(t => t.sprintId === sprint.id);
+
+  // Normalize statuses
+  const normalizeStatus = (s) => {
+    if (!s) return 'unknown';
+    const k = String(s).trim().toLowerCase();
+    if (['done','completed','complete','closed'].includes(k)) return 'done';
+    if (['in progress','in-progress','progress','doing','wip'].includes(k)) return 'inprogress';
+    if (['review','in review','in-review','code review','qa'].includes(k)) return 'review';
+    if (['todo','to do','backlog','open'].includes(k)) return 'todo';
+    return k;
+  };
+
+  // Count tickets by normalized status
+  const statusCounts = ticketsInSprint.reduce((acc, t) => {
+    const key = normalizeStatus(t.status);
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+
+  // Priority counts
+  const priorityCounts = ticketsInSprint.reduce((acc, t) => {
+    const p = (t.priority || '').toLowerCase();
+    acc[p] = (acc[p] || 0) + 1;
+    return acc;
+  }, {});
+
+  // Fixed priorities (High/Medium/Low only)
+  const fixedPriorities = [
+    { key: "high", label: "High", color: "bg-red-100" },
+    { key: "medium", label: "Medium", color: "bg-yellow-100" },
+    { key: "low", label: "Low", color: "bg-blue-100" }
+  ];
+
+  // Total time logged
+  const totalTimeLogged = ticketsInSprint.reduce((sum, t) => sum + (t.timeLogged || 0), 0);
+
+  // Ticket list with details
+  const ticketListHtml = ticketsInSprint.length > 0
+    ? ticketsInSprint.map(ticket => {
+        const assignee = users.find(u => u.name === ticket.assignee);
+        return `
+          <div class="p-2 border-b last:border-b-0 hover:bg-gray-50">
+            <div class="flex justify-between items-center">
+              <span class="font-medium">${ticket.title || ticket.id}</span>
+              <span class="text-sm text-gray-500">${ticket.status}</span>
+            </div>
+            <div class="text-xs text-gray-600 mt-1">
+              <span><strong>Assignee:</strong> ${assignee ? assignee.name : 'Unassigned'}</span> |
+              <span><strong>Due:</strong> ${ticket.dueDate ? formatDate(ticket.dueDate) : 'N/A'}</span> |
+              <span><strong>Logged:</strong> ${ticket.timeLogged || 0}h</span>
+            </div>
+          </div>
+        `;
+      }).join('')
+    : `<p class="text-center text-gray-500 py-4">No tickets in this sprint.</p>`;
+
+  // Status summary
+  const summaryHtml = `
+    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 my-4 text-center">
+      <div class="p-3 rounded bg-green-100">
+        <span class="block text-lg font-bold">${statusCounts.done || 0}</span>
+        <span class="text-sm text-gray-600">Completed</span>
+      </div>
+      <div class="p-3 rounded bg-yellow-100">
+        <span class="block text-lg font-bold">${statusCounts.inprogress || 0}</span>
+        <span class="text-sm text-gray-600">In Progress</span>
+      </div>
+      <div class="p-3 rounded bg-purple-100">
+        <span class="block text-lg font-bold">${statusCounts.review || 0}</span>
+        <span class="text-sm text-gray-600">In Review</span>
+      </div>
+      <div class="p-3 rounded bg-blue-100">
+        <span class="block text-lg font-bold">${statusCounts.todo || 0}</span>
+        <span class="text-sm text-gray-600">To Do</span>
+      </div>
+    </div>
+  `;
+
+  // Priority summary (always show High/Medium/Low)
+  const priorityHtml = `
+    <div class="grid grid-cols-3 gap-2 my-4 text-center">
+      ${fixedPriorities.map(p => `
+        <div class="p-2 rounded ${p.color}">
+          <span class="block text-lg font-bold">${priorityCounts[p.key] || 0}</span>
+          <span class="text-sm text-gray-600">${p.label}</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+  // Modal content with export buttons
+const modalContent = `
+  <div class="modal-content">
+    <div class="flex justify-between items-start pb-4 border-b">
+      <div>
+        <h3 class="text-2xl font-bold text-gray-800 mb-1">${sprint.name}</h3>
+        <p class="text-sm text-gray-600">${formatDate(sprint.startDate)} - ${formatDate(sprint.endDate)}</p>
+      </div>
+      <div class="flex gap-2">
+        <button id="export-csv" class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm">Export CSV</button>
+        <button id="export-pdf" class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-sm">Export PDF</button>
+        <button class="modal-close-btn"><i class="fas fa-times"></i></button>
+      </div>
+    </div>
+    <div class="mt-6 text-gray-700">
+<h4 class="font-bold mb-2">Goal:</h4>
+<div class="goal-box mb-4">
+  ${sprint.goal || 'No goal set.'}
+</div>
+
+
+      <h4 class="font-bold mb-2">Total Time Logged:</h4>
+      <p class="mb-4">${totalTimeLogged}h</p>
+
+      <h4 class="font-bold mb-2">Tickets in Sprint (${ticketsInSprint.length}):</h4>
+      ${summaryHtml}
+
+      <h4 class="font-bold mb-2">Priority Distribution:</h4>
+      ${priorityHtml}
+
+      <div class="max-h-60 overflow-y-auto border rounded-lg">
+        ${ticketListHtml}
+      </div>
+    </div>
+  </div>
+`;
+
+
+  openModal(modalContent, (e) => e.preventDefault());
+
+  // --- EXPORT HANDLERS ---
+  setTimeout(() => {
+    document.getElementById('export-csv').addEventListener('click', () => {
+      exportSprintCSV(sprint, ticketsInSprint);
+    });
+    document.getElementById('export-pdf').addEventListener('click', () => {
+      exportSprintPDF(sprint, ticketsInSprint, totalTimeLogged, priorityCounts, statusCounts);
+    });
+  }, 100);
+}
+
+// Export CSV
+function exportSprintCSV(sprint, tickets) {
+  const header = ["ID", "Title", "Status", "Priority", "Assignee", "Due Date", "Logged Hours"];
+  const rows = tickets.map(t => [
+    t.id,
+    `"${t.title}"`,
+    t.status,
+    t.priority || "N/A",
+    t.assignee || "Unassigned",
+    t.dueDate || "N/A",
+    t.timeLogged || 0
+  ]);
+
+  const csv = [header, ...rows].map(r => r.join(",")).join("\n");
+
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${sprint.name.replace(/\s+/g, "_")}.csv`;
+  a.click();
+
+  URL.revokeObjectURL(url);
+}
+
+// Export PDF
+function exportSprintPDF(sprint, tickets, totalTime, priorityCounts, statusCounts) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  doc.setFontSize(16);
+  doc.text(`Sprint: ${sprint.name}`, 10, 15);
+
+  doc.setFontSize(12);
+  doc.text(`Duration: ${formatDate(sprint.startDate)} - ${formatDate(sprint.endDate)}`, 10, 25);
+
+  // Wrap long goal text
+  const goal = sprint.goal || "No goal set";
+  const wrappedGoal = doc.splitTextToSize(`Goal: ${goal}`, 180); // wrap within 180px
+  doc.text(wrappedGoal, 10, 35);
+  let currentY = 35 + wrappedGoal.length * 7; // move down depending on wrapped lines
+
+  doc.text(`Total Time Logged: ${totalTime}h`, 10, currentY);
+  currentY += 15;
+
+  // Status counts
+  doc.text("Status Summary:", 10, currentY);
+  currentY += 10;
+  doc.text(`Completed: ${statusCounts.done || 0}`, 20, currentY);
+  currentY += 10;
+  doc.text(`In Progress: ${statusCounts.inprogress || 0}`, 20, currentY);
+  currentY += 10;
+  doc.text(`In Review: ${statusCounts.review || 0}`, 20, currentY);
+  currentY += 10;
+  doc.text(`To Do: ${statusCounts.todo || 0}`, 20, currentY);
+  currentY += 15;
+
+  // Priority counts
+  doc.text("Priority Distribution:", 10, currentY);
+  currentY += 10;
+  doc.text(`High: ${priorityCounts.high || 0}`, 20, currentY);
+  currentY += 10;
+  doc.text(`Medium: ${priorityCounts.medium || 0}`, 20, currentY);
+  currentY += 10;
+  doc.text(`Low: ${priorityCounts.low || 0}`, 20, currentY);
+  currentY += 15;
+
+  // Ticket list
+  doc.text("Tickets:", 10, currentY);
+  currentY += 10;
+  tickets.forEach((t, i) => {
+    const assignee = t.assignee || "Unassigned";
+    const logged = `${t.timeLogged || 0}h`;
+    const due = t.dueDate ? formatDate(t.dueDate) : "N/A";
+    const line = `${i + 1}. ${t.title} [${t.status}] | ${assignee} | (${logged}) | Due: ${due}`;
+
+    const wrappedLine = doc.splitTextToSize(line, 180);
+    doc.text(wrappedLine, 10, currentY);
+
+    currentY += wrappedLine.length * 7;
+    if (currentY > 270) {
+      doc.addPage();
+      currentY = 20;
+    }
+  });
+
+  doc.save(`${sprint.name.replace(/\s+/g, "_")}.pdf`);
+}
+
+
+
+// Open User Modal
+
+function openUserDetailsModal(userId) {
+  const user = users.find(u => u.id === userId);
+  if (!user) return;
+
+  const userTickets = tickets.filter(t => t.assignee === user.name);
+
+  const normalizeStatus = (s) => {
+    if (!s) return 'unknown';
+    const k = String(s).trim().toLowerCase();
+    if (['done','completed','complete','closed'].includes(k)) return 'done';
+    if (['in progress','in-progress','progress','doing','wip'].includes(k)) return 'inprogress';
+    if (['review','in review','in-review','code review','qa'].includes(k)) return 'review';
+    if (['todo','to do','backlog','open'].includes(k)) return 'todo';
+    return k;
+  };
+
+  const normalizePriority = (p) => {
+    if (!p) return 'unspecified';
+    const k = String(p).trim().toLowerCase();
+    if (['high','p1','urgent'].includes(k)) return 'high';
+    if (['medium','p2','normal'].includes(k)) return 'medium';
+    if (['low','p3','minor'].includes(k)) return 'low';
+    return 'unspecified';
+  };
+
+  // Count by status
+  const statusCounts = userTickets.reduce((acc, t) => {
+    const key = normalizeStatus(t.status);
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+
+  // Count by priority
+  const priorityCounts = userTickets.reduce((acc, t) => {
+    const key = normalizePriority(t.priority);
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+
+  function renderTickets(filteredTickets) {
+    return filteredTickets.length > 0
+      ? filteredTickets.map(ticket => {
+          const dueDate = ticket.dueDate ? formatDate(ticket.dueDate) : "N/A";
+          return `
+            <div class="flex justify-between items-center p-2 border-b last:border-b-0 hover:bg-gray-50">
+              <span class="font-medium">${ticket.title || ticket.id}</span>
+              <span class="text-sm text-gray-500">
+                ${ticket.status} | ${ticket.timeLogged || 0}h | Due: ${dueDate}
+              </span>
+            </div>
+          `;
+        }).join('')
+      : `<p class="text-center text-gray-500 py-4">No tickets match filter.</p>`;
+  }
+
+  const summaryHtml = `
+    <h4 class="font-bold mb-2">Status Distribution</h4>
+    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 my-4 text-center">
+      <div class="p-3 rounded bg-green-100">
+        <span class="block text-lg font-bold">${statusCounts.done || 0}</span>
+        <span class="text-sm text-gray-600">Completed</span>
+      </div>
+      <div class="p-3 rounded bg-yellow-100">
+        <span class="block text-lg font-bold">${statusCounts.inprogress || 0}</span>
+        <span class="text-sm text-gray-600">In Progress</span>
+      </div>
+      <div class="p-3 rounded bg-purple-100">
+        <span class="block text-lg font-bold">${statusCounts.review || 0}</span>
+        <span class="text-sm text-gray-600">In Review</span>
+      </div>
+      <div class="p-3 rounded bg-blue-100">
+        <span class="block text-lg font-bold">${statusCounts.todo || 0}</span>
+        <span class="text-sm text-gray-600">To Do</span>
+      </div>
+    </div>
+
+    <h4 class="font-bold mb-2">Priority Distribution</h4>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 my-4 text-center">
+      <div class="p-3 rounded bg-red-100">
+        <span class="block text-lg font-bold">${priorityCounts.high || 0}</span>
+        <span class="text-sm text-gray-600">High</span>
+      </div>
+      <div class="p-3 rounded bg-yellow-200">
+        <span class="block text-lg font-bold">${priorityCounts.medium || 0}</span>
+        <span class="text-sm text-gray-600">Medium</span>
+      </div>
+      <div class="p-3 rounded bg-green-100">
+        <span class="block text-lg font-bold">${priorityCounts.low || 0}</span>
+        <span class="text-sm text-gray-600">Low</span>
+      </div>
+    </div>
+  `;
+
+  const modalContent = `
+    <div class="modal-content">
+      <div class="flex justify-between items-start pb-4 border-b">
+        <div>
+          <h3 class="text-2xl font-bold text-gray-800 mb-1">${user.name}</h3>
+          <p class="text-sm text-gray-600">${user.email}</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="exportUserPdfBtn" class="px-3 py-1 bg-red-500 text-white rounded">Export PDF</button>
+          <button id="exportUserCsvBtn" class="px-3 py-1 bg-green-500 text-white rounded">Export CSV</button>
+          <button class="modal-close-btn"><i class="fas fa-times"></i></button>
+        </div>
+      </div>
+      <div class="mt-6 text-gray-700">
+        <h4 class="font-bold mb-2">Assigned Tickets (${userTickets.length}):</h4>
+        ${summaryHtml}
+        
+        <div class="flex gap-4 my-3 text-sm">
+          <label><input type="checkbox" class="status-filter" value="done" checked> Completed</label>
+          <label><input type="checkbox" class="status-filter" value="inprogress" checked> In Progress</label>
+          <label><input type="checkbox" class="status-filter" value="review" checked> In Review</label>
+          <label><input type="checkbox" class="status-filter" value="todo" checked> To Do</label>
+        </div>
+
+        <div id="userTicketList" class="max-h-60 overflow-y-auto border rounded-lg">
+          ${renderTickets(userTickets)}
+        </div>
+      </div>
+    </div>
+  `;
+
+  openModal(modalContent, (e) => e.preventDefault());
+
+  const checkboxes = document.querySelectorAll('.status-filter');
+  checkboxes.forEach(cb => {
+    cb.addEventListener('change', () => {
+      const selected = Array.from(checkboxes).filter(c => c.checked).map(c => c.value);
+      const filteredTickets = userTickets.filter(t => selected.includes(normalizeStatus(t.status)));
+      document.getElementById('userTicketList').innerHTML = renderTickets(filteredTickets);
+    });
+  });
+
+  // Export PDF
+  document.getElementById("exportUserPdfBtn").addEventListener("click", () => {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    doc.setFontSize(16);
+    doc.text(`User: ${user.name}`, 10, 10);
+    doc.setFontSize(12);
+    doc.text(`Email: ${user.email}`, 10, 20);
+    doc.text(`Total Tickets: ${userTickets.length}`, 10, 30);
+
+    doc.text("Status Summary:", 10, 45);
+    doc.text(`Completed: ${statusCounts.done || 0}`, 20, 55);
+    doc.text(`In Progress: ${statusCounts.inprogress || 0}`, 20, 65);
+    doc.text(`In Review: ${statusCounts.review || 0}`, 20, 75);
+    doc.text(`To Do: ${statusCounts.todo || 0}`, 20, 85);
+
+    doc.text("Priority Distribution:", 10, 100);
+    doc.text(`High: ${priorityCounts.high || 0}`, 20, 110);
+    doc.text(`Medium: ${priorityCounts.medium || 0}`, 20, 120);
+    doc.text(`Low: ${priorityCounts.low || 0}`, 20, 130);
+
+    doc.text("Tickets:", 10, 150);
+    let y = 160;
+    userTickets.forEach((t, i) => {
+      const dueDate = t.dueDate ? formatDate(t.dueDate) : "N/A";
+      const line = `${i + 1}. ${t.title || t.id} [${t.status}] | (${t.timeLogged || 0}h) | Due: ${dueDate}`;
+      doc.text(line, 10, y);
+      y += 10;
+      if (y > 270) { doc.addPage(); y = 20; }
+    });
+
+    doc.save(`${user.name}_details.pdf`);
+  });
+
+// Export CSV
+document.getElementById("exportUserCsvBtn").addEventListener("click", () => {
+  let csv = "Title,Status,Logged Hours,Due Date,Priority\n";
+  userTickets.forEach(t => {
+    const dueDate = t.dueDate ? formatDate(t.dueDate) : "N/A";
+    // Wrap dueDate in quotes to avoid splitting on commas
+    csv += `"${t.title || t.id}",${t.status},${t.timeLogged || 0},"${dueDate}",${t.priority || "N/A"}\n`;
+  });
+
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `${user.name}_details.csv`;
+  link.click();
+});
+
+}
+
+
+
+
+
+
    async function saveTicket(event) {
     event.preventDefault();
     const title = document.getElementById('ticketTitle').value.trim();
@@ -1561,7 +2061,7 @@ function getTypeIcon(type) {
     };
     const updatedLogs = [...(ticket.timeLogs || []), newLog];
     // Calculate new total time
-    const totalHours = (ticket.timeLogged || 0) + hours;
+    const totalHours = hours;
     const success = await saveToFirebase('tickets', timeLogTicketId, {
      timeLogged: totalHours,
      timeLogs: updatedLogs
@@ -1606,7 +2106,15 @@ function getTypeIcon(type) {
     const totalTickets = tickets.length;
     const completedTickets = tickets.filter(t => t.status === 'done').length;
     const openTickets = tickets.filter(t => t.status === 'todo' || t.status === 'progress' || t.status === 'review').length;
-    const activeSprints = sprints.filter(s => new Date(s.endDate) > new Date()).length;
+    const today = new Date();
+today.setHours(0, 0, 0, 0); // normalize to midnight
+
+const activeSprints = sprints.filter(s => {
+  const end = new Date(s.endDate);
+  end.setHours(0, 0, 0, 0);
+  return end >= today; // include today as active
+}).length;
+
     dashboardStats.innerHTML = `
                 
 																					
@@ -1627,82 +2135,358 @@ function getTypeIcon(type) {
 																					</div>
 																					<div class="stat-card bg-card p-6 rounded-xl shadow-md flex flex-col items-center hover:shadow-xl transition-shadow" onclick="openDashboardDetails('sprints')">
 																						<i class="fas fa-bolt text-4xl text-orange-500 mb-2"></i>
-																						<p class="text-sm text-gray-500">Active Sprints</p>
+																						<p class="text-sm text-gray-500">Sprints</p>
 																						<span class="text-4xl font-bold text-gray-800">${activeSprints}</span>
 																					</div>
             `;
    }
    // Change: Passed a flag to openTicketDetailsModal to hide buttons
-   function openDashboardDetails(type) {
-    let title = '';
-    let items = [];
-    let htmlContent = '';
-    if (type === 'total') {
-     title = 'All Tickets';
-     items = tickets;
-     htmlContent = items.map(ticket => `
-                    
-																					
-																					<div class="p-3 border-b hover:bg-gray-50 cursor-pointer" onclick="openTicketDetailsModal('${ticket.id}', true)">
-																						<p class="font-semibold">${ticket.title}</p>
-																						<p class="text-sm text-gray-500">${ticket.status} | Priority: ${ticket.priority}</p>
-																					</div>
-                `).join('');
-    } else if (type === 'completed') {
-     title = 'Completed Tickets';
-     items = tickets.filter(t => t.status === 'done');
-     htmlContent = items.map(ticket => `
-                    
-																					
-																					<div class="p-3 border-b hover:bg-gray-50 cursor-pointer" onclick="openTicketDetailsModal('${ticket.id}', true)">
-																						<p class="font-semibold">${ticket.title}</p>
-																						<p class="text-sm text-gray-500">Completed on: ${formatDate(ticket.updatedAt || new Date().toISOString())}</p>
-																					</div>
-                `).join('');
-    } else if (type === 'open') {
-     title = 'Open Tickets';
-     items = tickets.filter(t => t.status !== 'done');
-     htmlContent = items.map(ticket => `
-                    
-																					
-																					<div class="p-3 border-b hover:bg-gray-50 cursor-pointer" onclick="openTicketDetailsModal('${ticket.id}', true)">
-																						<p class="font-semibold">${ticket.title}</p>
-																						<p class="text-sm text-gray-500">Status: ${ticket.status} | Due: ${formatDate(ticket.dueDate)}</p>
-																					</div>
-                `).join('');
-    } else if (type === 'sprints') {
-     title = 'Active Sprints';
-     items = sprints.filter(s => new Date(s.endDate) > new Date());
-     htmlContent = items.map(sprint => `
-                    
-																					
-																					<div class="p-3 border-b hover:bg-gray-50 cursor-pointer" onclick="openSprintDetailsModal('${sprint.id}')">
-																						<p class="font-semibold">${sprint.name}</p>
-																						<p class="text-sm text-gray-500">${formatDate(sprint.startDate)} - ${formatDate(sprint.endDate)}</p>
-																					</div>
-                `).join('');
+   
+// Project Dashboard Modal
+   
+function openDashboardDetails(type) {
+  let title = '';
+  let items = [];
+  let htmlContent = '';
+
+  if (type === 'total') {
+    title = 'All Tickets';
+    items = tickets;
+  } else if (type === 'completed') {
+    title = 'Completed Tickets';
+    items = tickets.filter(t => t.status === 'done');
+  } else if (type === 'open') {
+    title = 'Open Tickets';
+    items = tickets.filter(t => t.status !== 'done');
+  } else if (type === 'sprints') {
+    title = 'Active Sprints';
+    items = sprints.filter(s => new Date(s.endDate) >= new Date().setHours(0,0,0,0));
+
+    // Build Sprint Layout
+    const renderSprints = (sprintList) => {
+      return sprintList.map(sprint => {
+        const ticketsInSprint = tickets.filter(t => t.sprintId === sprint.id);
+
+        // Count by status
+        const statusCounts = ticketsInSprint.reduce((acc, t) => {
+          const k = (t.status || "").toLowerCase();
+          acc[k] = (acc[k] || 0) + 1;
+          return acc;
+        }, {});
+
+        // Priority counts
+        const priorityCounts = ticketsInSprint.reduce((acc, t) => {
+          const p = (t.priority || "").toLowerCase();
+          acc[p] = (acc[p] || 0) + 1;
+          return acc;
+        }, {});
+
+        // Total logged hours
+        const totalLogged = ticketsInSprint.reduce((sum, t) => sum + (t.timeLogged || 0), 0);
+
+        // Ticket cards with status-based color
+        const ticketListHtml = ticketsInSprint.length > 0
+          ? ticketsInSprint.map(ticket => {
+              const assignee = users.find(u => u.name === ticket.assignee);
+              const statusColor = {
+                'done': 'bg-green-50',
+                'progress': 'bg-yellow-50',
+                'review': 'bg-purple-50',
+                'todo': 'bg-blue-50'
+              }[ticket.status] || 'bg-gray-50';
+
+              return `
+                <div class="p-3 mb-2 rounded border ${statusColor}">
+                  <div class="flex justify-between">
+                    <span class="font-medium">${ticket.title}</span>
+                    <span class="text-xs text-gray-600">${ticket.status}</span>
+                  </div>
+                  <div class="text-xs text-gray-600 mt-1">
+                    <strong>Assignee:</strong> ${assignee ? assignee.name : 'Unassigned'} |
+                    <strong>Due:</strong> ${ticket.dueDate ? formatDate(ticket.dueDate) : 'N/A'} |
+                    <strong>Logged:</strong> ${ticket.timeLogged || 0}h |
+                    <strong>Sprint:</strong> ${sprint.name}
+                  </div>
+                </div>
+              `;
+            }).join('')
+          : `<p class="text-center text-gray-500 py-4">No tickets in this sprint.</p>`;
+
+        return `
+          <div class="p-4 mb-6 border rounded-lg shadow-sm bg-white">
+            <div class="flex justify-between items-center mb-4">
+              <div>
+                <h4 class="text-lg font-bold">${sprint.name}</h4>
+                <p class="text-sm text-gray-500">${formatDate(sprint.startDate)} - ${formatDate(sprint.endDate)}</p>
+              </div>
+            </div>
+
+            <!-- Sprint summary tiles -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center mb-4">
+              <div class="p-3 rounded bg-gray-100">
+                <span class="block text-lg font-bold">${ticketsInSprint.length}</span>
+                <span class="text-xs text-gray-600">Total Tickets</span>
+              </div>
+              <div class="p-3 rounded bg-gray-100">
+                <span class="block text-lg font-bold">${totalLogged}h</span>
+                <span class="text-xs text-gray-600">Logged Hours</span>
+              </div>
+              <div class="p-3 rounded bg-green-100">
+                <span class="block text-lg font-bold">${statusCounts.done || 0}</span>
+                <span class="text-xs text-gray-600">Completed</span>
+              </div>
+              <div class="p-3 rounded bg-yellow-100">
+                <span class="block text-lg font-bold">${statusCounts.progress || 0}</span>
+                <span class="text-xs text-gray-600">In Progress</span>
+              </div>
+            </div>
+
+            <!-- Priority distribution -->
+            <h5 class="font-semibold mb-2">Priority Distribution</h5>
+            <div class="grid grid-cols-3 gap-2 text-center mb-4">
+              <div class="p-2 rounded bg-red-100">
+                <span class="block text-lg font-bold">${priorityCounts.high || 0}</span>
+                <span class="text-xs text-gray-600">High</span>
+              </div>
+              <div class="p-2 rounded bg-yellow-100">
+                <span class="block text-lg font-bold">${priorityCounts.medium || 0}</span>
+                <span class="text-xs text-gray-600">Medium</span>
+              </div>
+              <div class="p-2 rounded bg-green-100">
+                <span class="block text-lg font-bold">${priorityCounts.low || 0}</span>
+                <span class="text-xs text-gray-600">Low</span>
+              </div>
+            </div>
+
+            <!-- Ticket list -->
+            <h5 class="font-semibold mb-2">Tickets</h5>
+            <div class="max-h-60 overflow-y-auto border rounded p-2">
+              ${ticketListHtml}
+            </div>
+          </div>
+        `;
+      }).join('');
+    };
+
+    // Initial sprint render
+    htmlContent = `
+      <div class="my-4">
+        <label class="font-semibold text-sm mr-2">Filter:</label>
+        <select id="sprint-filter" class="border rounded p-1 text-sm">
+          <option value="active" selected>Active Sprints</option>
+          <option value="inactive">Inactive Sprints</option>
+          <option value="all">All Sprints</option>
+        </select>
+      </div>
+      <div id="sprint-container">
+        ${renderSprints(items)}
+      </div>
+    `;
+
+    // After modal opens, bind filter change
+    setTimeout(() => {
+      document.getElementById("sprint-filter")?.addEventListener("change", (e) => {
+        let filtered = [];
+       if (e.target.value === "active") {
+  filtered = sprints.filter(s => new Date(s.endDate) >= new Date().setHours(0,0,0,0));
+} else if (e.target.value === "inactive") {
+  filtered = sprints.filter(s => new Date(s.endDate) < new Date().setHours(0,0,0,0));
+} else {
+  filtered = sprints;
+}
+        document.getElementById("sprint-container").innerHTML = renderSprints(filtered);
+      });
+    }, 200);
+  }
+
+  // --- Summaries for non-sprints ---
+  let statusCounts = {};
+  let priorityCounts = {};
+  if (type !== 'sprints') {
+    statusCounts = items.reduce((acc, t) => {
+      const key = (t.status || 'unknown').toLowerCase();
+      acc[key] = (acc[key] || 0) + 1;
+      return acc;
+    }, {});
+    priorityCounts = items.reduce((acc, t) => {
+      const key = (t.priority || 'N/A').toLowerCase();
+      acc[key] = (acc[key] || 0) + 1;
+      return acc;
+    }, {});
+  }
+
+  // --- Ticket list details for non-sprints ---
+  if (type !== 'sprints') {
+    htmlContent = items.map(ticket => {
+      const assignee = users.find(u => u.name === ticket.assignee)?.name || "Unassigned";
+      const sprintName = sprints.find(s => s.id === ticket.sprintId)?.name || "No Sprint";
+      return `
+        <div class="p-3 border-b hover:bg-gray-50 cursor-pointer" onclick="openTicketDetailsModal('${ticket.id}', true)">
+          <p class="font-semibold">${ticket.title}</p>
+          <p class="text-sm text-gray-500">
+            Status: ${ticket.status} | Priority: ${ticket.priority || "N/A"} | 
+            Assignee: ${assignee} | Due: ${ticket.dueDate ? formatDate(ticket.dueDate) : "N/A"} | 
+            Logged: ${ticket.timeLogged || 0}h | Sprint: ${sprintName}
+          </p>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // --- Summary blocks for non-sprints ---
+  const summaryHtml = (type !== 'sprints') ? `
+    <div class="my-4">
+      <h4 class="font-bold mb-2">Total Tickets</h4>
+      <div class="p-3 rounded bg-gray-100 text-center">
+        <span class="block text-xl font-bold">${items.length}</span>
+        <span class="text-sm text-gray-600">Tickets</span>
+      </div>
+    </div>
+
+    <div class="my-4">
+      <h4 class="font-bold mb-2">Ticket Status</h4>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+        <div class="p-2 rounded bg-green-100">
+          <span class="block text-lg font-bold">${statusCounts.done || 0}</span>
+          <span class="text-xs text-gray-600">Completed</span>
+        </div>
+        <div class="p-2 rounded bg-yellow-100">
+          <span class="block text-lg font-bold">${statusCounts.progress || 0}</span>
+          <span class="text-xs text-gray-600">In Progress</span>
+        </div>
+        <div class="p-2 rounded bg-purple-100">
+          <span class="block text-lg font-bold">${statusCounts.review || 0}</span>
+          <span class="text-xs text-gray-600">Review</span>
+        </div>
+        <div class="p-2 rounded bg-blue-100">
+          <span class="block text-lg font-bold">${statusCounts.todo || 0}</span>
+          <span class="text-xs text-gray-600">To Do</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="my-4">
+      <h4 class="font-bold mb-2">Priority Distribution</h4>
+      <div class="grid grid-cols-3 gap-2 text-center">
+        <div class="p-2 rounded bg-red-100">
+          <span class="block text-lg font-bold">${priorityCounts.high || 0}</span>
+          <span class="text-xs text-gray-600">High</span>
+        </div>
+        <div class="p-2 rounded bg-yellow-100">
+          <span class="block text-lg font-bold">${priorityCounts.medium || 0}</span>
+          <span class="text-xs text-gray-600">Medium</span>
+        </div>
+        <div class="p-2 rounded bg-green-100">
+          <span class="block text-lg font-bold">${priorityCounts.low || 0}</span>
+          <span class="text-xs text-gray-600">Low</span>
+        </div>
+      </div>
+    </div>
+  ` : ``;
+
+  // --- Modal content ---
+  const modalContent = `
+    <div class="modal-content max-w-3xl">
+      <div class="flex justify-between items-center pb-4 border-b">
+        <h3 class="text-2xl font-bold">${title} Details</h3>
+<div class="flex gap-2">
+  ${type !== 'sprints' ? `
+    <button id="export-csv" class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm">Export CSV</button>
+    <button id="export-pdf" class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-sm">Export PDF</button>
+  ` : ''}
+  <button class="modal-close-btn"><i class="fas fa-times"></i></button>
+</div>
+
+      </div>
+
+      <div class="mt-6 max-h-[70vh] overflow-y-auto">
+        ${summaryHtml}
+        ${items.length > 0 ? htmlContent : `<p class="text-center text-gray-500 py-8">No items to display.</p>`}
+      </div>
+    </div>
+  `;
+
+  openModal(modalContent, (e) => e.preventDefault());
+
+  // bind export
+  setTimeout(() => {
+    document.getElementById("export-csv")?.addEventListener("click", () => exportTicketsCSV(items, title));
+    document.getElementById("export-pdf")?.addEventListener("click", () => exportTicketsPDF(items, title));
+  }, 100);
+}
+
+
+
+function exportTicketsCSV(items, title) {
+  if (!items || items.length === 0) {
+    alert("No data to export.");
+    return;
+  }
+
+  const header = ["ID", "Title", "Status", "Priority", "Assignee", "Due Date", "Logged Hours", "Sprint"];
+  const rows = items.map(t => {
+    const assignee = users.find(u => u.name === t.assignee)?.name || "Unassigned";
+    const sprintName = sprints.find(s => s.id === t.sprintId)?.name || "No Sprint";
+    return [
+      t.id,
+      `"${t.title}"`,
+      t.status,
+      t.priority || "N/A",
+      assignee,
+      t.dueDate || "N/A",
+      t.timeLogged || 0,
+      sprintName
+    ];
+  });
+
+  const csv = [header, ...rows].map(r => r.join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${title.replace(/\s+/g, "_")}.csv`;
+  a.click();
+
+  URL.revokeObjectURL(url);
+}
+
+function exportTicketsPDF(items, title) {
+  if (!items || items.length === 0) {
+    alert("No data to export.");
+    return;
+  }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  doc.setFontSize(16);
+  doc.text(`${title}`, 10, 15);
+
+  let y = 25;
+  doc.setFontSize(10);
+
+  items.forEach((t, i) => {
+    const assignee = users.find(u => u.name === t.assignee)?.name || "Unassigned";
+    const sprintName = sprints.find(s => s.id === t.sprintId)?.name || "No Sprint";
+    const due = t.dueDate ? formatDate(t.dueDate) : "N/A";
+
+    const line = `${i + 1}. ${t.title} [${t.status}] | Priority: ${t.priority || "N/A"} | Assignee: ${assignee} | Due: ${due} | Logged: ${t.timeLogged || 0}h | Sprint: ${sprintName}`;
+
+    const wrapped = doc.splitTextToSize(line, 180);
+    doc.text(wrapped, 10, y);
+    y += wrapped.length * 6;
+
+    if (y > 270) {
+      doc.addPage();
+      y = 20;
     }
-    const modalContent = `
-                
-																					
-																					<div class="modal-content">
-																						<div class="flex justify-between items-center pb-4 border-b">
-																							<h3 class="text-2xl font-bold">${title} Details</h3>
-																							<button class="modal-close-btn">
-																								<i class="fas fa-times"></i>
-																							</button>
-																						</div>
-																						<div class="mt-6 max-h-96 overflow-y-auto">
-                        ${items.length > 0 ? htmlContent : `
-																							
-																							<p class="text-center text-gray-500 py-8">No items to display.</p>`}
-                    
-																						
-																						</div>
-																					</div>
-            `;
-    openModal(modalContent, (e) => e.preventDefault());
-   }
+  });
+
+  doc.save(`${title.replace(/\s+/g, "_")}.pdf`);
+}
+
+
 
    function renderCharts() {
     Chart.register(ChartDataLabels);
@@ -1950,34 +2734,59 @@ function getTypeIcon(type) {
     chartInstances = {};
    }
 
-   function filterTickets(ticketsToFilter) {
-    const status = statusFilterSelect.value;
-    const priority = priorityFilterSelect.value;
-    const assignee = assigneeFilterSelect.value;
-    const searchTerm = searchInput.value.toLowerCase();
-    return ticketsToFilter.filter(ticket => {
-     const matchesStatus = !status || ticket.status === status;
-     const matchesPriority = !priority || ticket.priority === priority;
-     const matchesAssignee = !assignee || ticket.assignee === assignee;
-     const matchesSearch = !searchTerm || ticket.title.toLowerCase().includes(searchTerm) || ticket.description.toLowerCase().includes(searchTerm);
-     return matchesStatus && matchesPriority && matchesAssignee && matchesSearch;
-    });
-   }
+function filterTickets(ticketsToFilter) {
+  const status = statusFilterSelect.value;
+  const priority = priorityFilterSelect.value;
+  const assignee = assigneeFilterSelect.value;
+  const searchTerm = searchInput.value.toLowerCase();
+
+  return ticketsToFilter.filter(ticket => {
+    const matchesStatus = !status || ticket.status === status;
+    const matchesPriority = !priority || ticket.priority === priority;
+
+    let matchesAssignee = true;
+    if (assignee) {
+      if (assignee === "__unassigned__") {
+        matchesAssignee = !ticket.assignee || ticket.assignee.trim() === "";
+      } else {
+        matchesAssignee = ticket.assignee === assignee;
+      }
+    }
+
+    const matchesSearch =
+      !searchTerm ||
+      ticket.title.toLowerCase().includes(searchTerm) ||
+      ticket.description.toLowerCase().includes(searchTerm);
+
+    return matchesStatus && matchesPriority && matchesAssignee && matchesSearch;
+  });
+}
+
 
    function filterAndRenderTickets() {
     renderTickets();
    }
 
-   function updateFilterOptions() {
-    assigneeFilterSelect.innerHTML = ' < option value = "" > All Assignees < /option>';
-    const uniqueAssignees = [...new Set(tickets.map(t => t.assignee).filter(Boolean))];
-    uniqueAssignees.forEach(assignee => {
-     const option = document.createElement('option');
-     option.value = assignee;
-     option.textContent = users.find(u => u.name === assignee)?.name || assignee;
-     assigneeFilterSelect.appendChild(option);
-    });
-   }
+function updateFilterOptions() {
+  // Reset dropdown with "All" and "Unassigned"
+  assigneeFilterSelect.innerHTML = `
+    <option value="">All Assignees</option>
+  `;
+
+  // Collect unique non-empty assignees
+  const uniqueAssignees = [...new Set(
+    tickets.map(t => t.assignee).filter(a => a && a.trim() !== "")
+  )];
+
+  // Append each valid assignee
+  uniqueAssignees.forEach(assignee => {
+    const option = document.createElement('option');
+    option.value = assignee;
+    option.textContent = users.find(u => u.name === assignee)?.name || assignee;
+    assigneeFilterSelect.appendChild(option);
+  });
+}
+
 
    function dragStart(event, ticketId) {
     draggedTicketId = ticketId;
