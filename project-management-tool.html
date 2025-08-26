@@ -1,0 +1,4347 @@
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project Management Tool</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    lucide.createIcons();
+  });
+</script>
+  <style>
+   body {
+    font-family: 'Inter', sans-serif;
+    background-color: #f3f4f6;
+    color: #1f2937;
+   }
+   
+     .active-submenu {
+    background-color: #e0e7ff; /* light indigo */
+    color: #3730a3;            /* dark indigo text */
+    font-weight: 600;
+    border-left: 4px solid #6366f1; /* Indigo accent */
+  }
+  
+  .nav-btn.active {
+    background-color: #e0e7ff !important; /* soft indigo background */
+    color: #1e3a8a !important;            /* indigo text */
+    font-weight: 600;
+  }
+
+  
+  .active-nav {
+  background-color: #eef2ff; /* light indigo */
+  color: #4f46e5;           /* indigo text */
+  font-weight: 600;
+}
+
+   
+     /* Slim left bar for active submenu */
+  .submenu-btn .active-bar {
+    position: absolute;
+    left: -0.75rem;
+    top: 0;
+    width: 4px;
+    height: 100%;
+    background-color: #4f46e5; /* indigo-600 */
+    border-radius: 0 4px 4px 0;
+  }
+
+  /* Active submenu style */
+  .submenu-btn.active {
+    background: linear-gradient(to right, #eef2ff, #e0e7ff);
+    color: #3730a3; /* indigo-800 */
+    font-weight: 600;
+    box-shadow: inset 0 0 5px rgba(79, 70, 229, 0.2);
+  }
+  .submenu-btn.active .active-bar {
+    display: block;
+  }
+
+   .bg-card {
+    background-color: white;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+   }
+
+   .nav-btn {
+    background-color: white;
+    color: #4b5563;
+   }
+   
+   
+.kanban-container {
+  display: flex;
+  flex-wrap: nowrap;   /* ✅ no wrapping, single row */
+  gap: 2rem;
+  align-items: flex-start;
+  justify-content: flex-start;
+  height: 100%;
+  padding-bottom: 2rem;
+  overflow-x: auto;    /* ✅ horizontal scroll */
+  scrollbar-width: thin;
+  scrollbar-color: #8b5cf6 transparent;
+  background: transparent;
+}
+
+/* Scrollbar */
+.kanban-container::-webkit-scrollbar {
+  height: 10px;
+}
+
+.kanban-container::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #6366f1, #9333ea);
+  border-radius: 10px;
+}
+
+/* Kanban Column */
+.kanban-column {
+  flex: 0 0 340px;   /* ✅ fixed column width */
+  min-width: 340px;
+  max-width: 360px;
+  height: calc(100vh - 180px);
+  background: #ffffff;
+  border: 2px solid #e5e7eb;
+  border-radius: 18px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.05);
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+/* ✨ Hover effect (fixed: no jump, no translateY) */
+.kanban-column:hover {
+  border-color: #6366f1;
+  box-shadow: 0 10px 24px rgba(99,102,241,0.25);
+}
+
+/* Column Header */
+.column-header {
+  background: linear-gradient(135deg, #6366f1, #9333ea);
+  border-bottom: 2px solid rgba(229,231,235,0.3);
+  padding: 1rem 1.3rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 16px 16px 0 0;
+  font-weight: 700;
+  font-size: 1rem;
+  color: #ffffff;
+  letter-spacing: 0.5px;
+}
+
+.column-header span {
+  font-size: 0.8rem;
+  color: #1e1b4b;
+  background: #e0e7ff;
+  padding: 0.3rem 0.7rem;
+  border-radius: 10px;
+  font-weight: 600;
+}ow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+/* 🎟 Ticket Cards */
+.ticket-card {
+  background: #ffffff;
+  border: 2px solid #f3f4f6;
+  border-radius: 14px;
+  margin: 1.2rem;
+  padding: 1.2rem;
+  cursor: grab;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.ticket-card:hover {
+  border-color: #9333ea;
+  box-shadow: 0 10px 22px rgba(147,51,234,0.25);
+  transform: scale(1.02); /* small zoom only */
+}
+
+/* Priority Colors */
+.ticket-card.high { border-left: 6px solid #ef4444; }
+.ticket-card.medium { border-left: 6px solid #f59e0b; }
+.ticket-card.low { border-left: 6px solid #10b981; }
+
+/* Ticket Content */
+.ticket-card h4 {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #111827;
+  margin-bottom: 0.4rem;
+}
+
+.ticket-card p {
+  color: #4b5563;
+  font-size: 0.85rem;
+  line-height: 1.3rem;
+}
+
+/* Metadata */
+.ticket-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.8rem;
+  font-size: 0.8rem;
+  color: #6b7280;
+  border-top: 1px dashed #e5e7eb;
+  padding-top: 0.5rem;
+}
+
+
+/* 🌍 Full screen Kanban */
+body, html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  background: #f3f4f6;
+  font-family: "Inter", sans-serif;
+}
+
+.kanban-wrapper {
+  width: 100%;
+  height: 100vh;
+  padding: 2rem;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ✨ Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(15px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+
+
+
+   .column-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #d1d5db;
+    margin-bottom: 1rem;
+   }
+
+   .column-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #374151;
+   }
+
+   .column-count {
+    font-size: 0.875rem;
+    font-weight: 700;
+    background-color: #d1d5db;
+    color: #4b5563;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+   }
+
+   .kanban-card {
+    background-color: white;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    cursor: grab;
+    transition: transform 0.2s ease-in-out;
+   }
+
+   .kanban-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+   }
+
+   .kanban-card h4 {
+    font-weight: 700;
+    color: #1f2937;
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+   }
+
+   .kanban-card p {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-bottom: 0.75rem;
+   }
+
+   .kanban-card-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.75rem;
+    color: #9ca3af;
+    margin-top: 0.5rem;
+   }
+
+   .kanban-card-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+   }
+
+   .ticket-card,
+   .sprint-card,
+   .stat-card,
+   .user-card {
+    background-color: white;
+    cursor: pointer;
+   }
+
+   .view {
+    display: none;
+   }
+   
+  /* Sidebar scrollbar */
+  #sidebar::-webkit-scrollbar {
+    width: 8px;
+  }
+  #sidebar::-webkit-scrollbar-track {
+    background: #f9fafb; /* very light gray */
+  }
+  #sidebar::-webkit-scrollbar-thumb {
+    background-color: #d6b8ff; /* soft light purple */
+    border-radius: 4px;
+  }
+  #sidebar::-webkit-scrollbar-thumb:hover {
+    background-color: #b88cff; /* slightly darker on hover */
+  }
+
+  /* Firefox */
+#sidebar {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border-right: 1px solid rgba(0,0,0,0.05);
+}
+
+
+
+
+
+
+
+
+   .view.active {
+    display: block;
+   }
+
+   .drag-over {
+    @apply border-dashed border-2 border-indigo-500 bg-gray-200;
+   }
+
+   .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+   }
+
+   .modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+   }
+
+   .modal-content {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    max-width: 90%;
+    width: 640px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    transform: translateY(-20px);
+    transition: transform 0.3s ease;
+   }
+
+   .modal-overlay.active .modal-content {
+    transform: translateY(0);
+   }
+
+   /* Modernized Form Styling */
+   .form-group {
+    @apply mb-4;
+   }
+
+   .form-label {
+    @apply block text-sm font-medium text-gray-700 mb-1;
+   }
+
+   .form-input,
+   .form-select,
+   .form-textarea {
+    @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus: outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow;
+   }
+
+   .form-textarea {
+    @apply h-24 resize-none;
+   }
+
+   .form-btn {
+    @apply font-semibold py-3 px-6 rounded-lg shadow-md transition-all hover: shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-500;
+   }
+
+   .toast {
+    position: fixed;
+    top: 1rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(-100%);
+    z-index: 2000;
+    padding: 0.75rem 1rem;
+    border-radius: 9999px;
+    color: white;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    pointer-events: none;
+    opacity: 0;
+   }
+
+   .toast.active {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+   }
+
+   .toast-close-btn {
+    background: none;
+    border: none;
+    color: white;
+    margin-left: 0.5rem;
+    cursor: pointer;
+    padding: 0;
+    font-size: 1.2rem;
+   }
+
+   /* New: Modern close button style */
+   .modal-close-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #9ca3af;
+    transition: color 0.2s;
+    padding: 0;
+   }
+
+   .modal-close-btn:hover {
+    color: #4b5563;
+   }
+
+   ::-webkit-scrollbar {
+    width: 8px;
+   }
+
+   ::-webkit-scrollbar-track {
+    background: #e5e7eb;
+    border-radius: 10px;
+   }
+
+   ::-webkit-scrollbar-thumb {
+    background: #9ca3af;
+    border-radius: 10px;
+   }
+
+   ::-webkit-scrollbar-thumb:hover {
+    background: #6b7280;
+   }
+
+   .chart-container {
+    position: relative;
+    width: 100%;
+    height: 300px;
+   }
+  </style>
+ </head>
+ <body class="p-8">
+  <!-- Sidebar -->
+<div id="sidebar" 
+     class="fixed top-0 left-0 h-full w-64 bg-white shadow-lg z-50 
+            transform -translate-x-full transition-transform duration-300 
+            lg:translate-x-0 overflow-y-auto">
+<div class="flex items-center justify-between p-4 border-b">
+  <h2 class="text-2xl font-bold flex items-center gap-2" style="color:#3b3937;">
+    <!-- Replace Lucide icon with PNG -->
+    <img src="InsightSuiteTransparent.png" alt="Project Management Logo" class="w-10 h-10 object-contain" />
+    Project Management
+  </h2>
+  <button id="closeSidebar" class="lg:hidden text-gray-500 text-2xl">&times;</button>
+</div>
+
+
+  <nav class="flex flex-col space-y-2 px-4 pb-6">
+    <div class="mt-8">
+    </div>
+
+    <!-- 🔹 Dashboard Tab -->
+    <button class="nav-btn flex items-center px-4 py-3 rounded-lg hover:bg-gray-100 transition" onclick="showView('dashboard')">
+      <i class="fas fa-chart-line mr-3 text-indigo-500"></i> Dashboard
+    </button>
+
+    <!-- 🔹 Tickets Tab -->
+    <button class="nav-btn flex items-center px-4 py-3 rounded-lg hover:bg-gray-100 transition" onclick="showView('tickets')">
+      <i class="fas fa-ticket-alt mr-3 text-indigo-500"></i> Tickets
+    </button>
+
+    <!-- 🔹 Kanban Tab -->
+    <button class="nav-btn flex items-center px-4 py-3 rounded-lg hover:bg-gray-100 transition" onclick="showView('kanban')">
+      <i class="fas fa-clipboard-list mr-3 text-indigo-500"></i> Kanban
+    </button>
+
+    <!-- 🔹 Sprints Tab -->
+    <button class="nav-btn flex items-center px-4 py-3 rounded-lg hover:bg-gray-100 transition" onclick="showView('sprints')">
+      <i class="fas fa-bolt mr-3 text-indigo-500"></i> Sprints
+    </button>
+
+    <!-- 🔹 Users Tab -->
+    <button class="nav-btn flex items-center px-4 py-3 rounded-lg hover:bg-gray-100 transition" onclick="showView('users')">
+      <i class="fas fa-users mr-3 text-indigo-500"></i> Users
+    </button>
+
+    <!-- 🔹 Parent Analysis Tab -->
+<!-- 🔹 Parent Analysis Tab -->
+<div>
+  <button 
+    class="nav-btn flex items-center px-4 py-3 rounded-lg hover:bg-indigo-50 transition w-full text-left justify-between font-semibold"
+    onclick="toggleSubmenu('analysisSubmenu','analysisArrow')"
+  >
+    <span class="flex items-center">
+      <i class="fas fa-chart-pie mr-3 text-indigo-600"></i> 
+      <span>Analysis</span>
+    </span>
+    <i id="analysisArrow" class="fas fa-chevron-down text-gray-500 transition-transform duration-300"></i>
+  </button>
+
+  <!-- Submenu -->
+  <div id="analysisSubmenu" class="ml-4 mt-2 hidden flex-col space-y-2 border-l-2 border-indigo-200 pl-3">
+    <button 
+      class="submenu-btn flex items-center px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-indigo-100 transition"
+      onclick="showView('advanced-analysis'); setActiveSubmenu(this);">
+      <i data-lucide="trending-up" class="mr-2 text-indigo-500"></i> Advanced Analysis
+    </button>
+<button 
+  class="submenu-btn flex items-center px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-indigo-100 transition"
+  onclick="showView('analysis'); setActiveSubmenu(this);">
+  <i data-lucide="kanban" class="mr-2 text-indigo-500"></i> Sprint Analysis
+</button>
+<button 
+  class="submenu-btn flex items-center px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-indigo-100 transition"
+  onclick="showView('performance'); setActiveSubmenu(this);">
+  <i data-lucide="users-round" class="mr-2 text-indigo-500"></i> Emp Performance
+</button>
+
+  </div>
+</div>
+
+<!-- Tools Parent Tab -->
+
+<div>
+  <button 
+    class="nav-btn flex items-center px-4 py-3 rounded-lg hover:bg-indigo-50 transition w-full text-left justify-between font-semibold"
+    onclick="toggleSubmenu('toolsSubmenu','toolsArrow')"
+  >
+    <span class="flex items-center">
+      <i class="fas fa-tools mr-3 text-indigo-600"></i> 
+      <span>Tools</span>
+    </span>
+    <i id="toolsArrow" class="fas fa-chevron-down text-gray-500 transition-transform duration-300"></i>
+  </button>
+
+  <!-- ✅ Fixed ID -->
+<div id="toolsSubmenu" class="ml-4 mt-2 hidden flex-col space-y-2 border-l-2 border-indigo-200 pl-3">
+
+<!-- BRD Generator -->
+<button 
+  class="submenu-btn flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-indigo-100 transition"
+  onclick="window.open('BRD-Generator.html', '_blank')">
+  <i data-lucide="file-text" class="text-indigo-500"></i>
+  BRD Generator
+</button>
+
+<!-- RCA Generator -->
+<button 
+  class="submenu-btn flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-indigo-100 transition"
+  onclick="window.open('RCA-Generator.html', '_blank')">
+  <i data-lucide="search-check" class="text-indigo-500"></i>
+  RCA Generator
+</button>
+
+<!-- SWOT Analysis -->
+<button 
+  class="submenu-btn flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-indigo-100 transition"
+  onclick="window.open('SWOT.html', '_blank')">
+  <i data-lucide="bar-chart-2" class="text-indigo-500"></i>
+  SWOT Analysis
+</button>
+
+<!-- Diagram -->
+<button 
+  class="submenu-btn flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-indigo-100 transition"
+  onclick="showView('diagram'); setActiveSubmenu(this);">
+  <i data-lucide="git-branch" class="text-indigo-500"></i>
+  Diagram
+</button>
+
+</div>
+
+</div>
+
+    <!-- 🔹 Logout Tab -->
+<button 
+  class="nav-btn flex items-center px-4 py-3 rounded-lg hover:bg-gray-100 transition"
+  onclick="window.open('chooser.html', '_blank')">
+  <i class="fas fa-sign-out-alt mr-3 text-indigo-500"></i>
+  Switch App
+</button>
+
+
+
+
+  </nav>
+</div>
+
+  <!-- Start -> Script for toggle Submenu -->
+
+<script>
+  function toggleSubmenu(id) {
+    const submenu = document.getElementById(id);
+    submenu.classList.toggle("hidden");
+  }
+
+  // ✅ Highlight only the selected submenu item
+  document.addEventListener("DOMContentLoaded", () => {
+    const submenuBtns = document.querySelectorAll("#analysisSubmenu .submenu-btn, #toolsSubmenu .submenu-btn");
+
+    submenuBtns.forEach(btn => {
+      btn.addEventListener("click", function () {
+        // remove highlight from all
+        submenuBtns.forEach(b => b.classList.remove("active-submenu"));
+        // highlight the clicked one
+        this.classList.add("active-submenu");
+      });
+    });
+  });
+</script>
+
+
+  <!-- End -> Script for toggle Submenu -->
+
+  
+  <!-- Mobile Menu Button -->
+  <button id="openSidebar" class="fixed top-4 left-4 z-50 p-2 rounded-md bg-indigo-600 text-white shadow-lg lg:hidden">
+   <i class="fas fa-bars"></i>
+  </button>
+<div class="lg:pl-64 p-6 transition-all">
+  <div class="bg-card rounded-xl shadow-lg p-8 content">
+
+    <!-- Dashboard -->
+<div id="dashboard" class="view active">
+  <h2 class="text-3xl font-bold text-gray-800 mb-6">Project Dashboard</h2>
+
+  <!-- Stats Grid -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" id="dashboardStats"></div>
+
+  <!-- Charts Grid -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
+
+    <!-- Status Distribution -->
+    <div class="border rounded-lg shadow">
+      <div class="bg-gray-100 px-4 py-2 flex justify-between items-center cursor-pointer"
+           onclick="toggleDashChart('status')">
+        <span class="font-semibold">Status Distribution</span>
+        <button id="status-btn" class="text-blue-600 text-sm">Hide</button>
+      </div>
+      <div id="status-chart" class="p-4">
+        <canvas id="statusChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Priority Distribution -->
+    <div class="border rounded-lg shadow">
+      <div class="bg-gray-100 px-4 py-2 flex justify-between items-center cursor-pointer"
+           onclick="toggleDashChart('priority')">
+        <span class="font-semibold">Priority Distribution</span>
+        <button id="priority-btn" class="text-blue-600 text-sm">Hide</button>
+      </div>
+      <div id="priority-chart" class="p-4">
+        <canvas id="priorityChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Time Logged per Assignee -->
+    <div class="border rounded-lg shadow">
+      <div class="bg-gray-100 px-4 py-2 flex justify-between items-center cursor-pointer"
+           onclick="toggleDashChart('timeLog')">
+        <span class="font-semibold">Time Logged per Assignee</span>
+        <button id="timeLog-btn" class="text-blue-600 text-sm">Hide</button>
+      </div>
+      <div id="timeLog-chart" class="p-4">
+        <canvas id="timeLogChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Tickets per Sprint -->
+    <div class="border rounded-lg shadow">
+      <div class="bg-gray-100 px-4 py-2 flex justify-between items-center cursor-pointer"
+           onclick="toggleDashChart('sprintTicket')">
+        <span class="font-semibold">Tickets per Sprint</span>
+        <button id="sprintTicket-btn" class="text-blue-600 text-sm">Hide</button>
+      </div>
+      <div id="sprintTicket-chart" class="p-4">
+        <canvas id="sprintTicketChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Assignee Workload -->
+    <div class="border rounded-lg shadow">
+      <div class="bg-gray-100 px-4 py-2 flex justify-between items-center cursor-pointer"
+           onclick="toggleDashChart('workload')">
+        <span class="font-semibold">Assignee Workload</span>
+        <button id="workload-btn" class="text-blue-600 text-sm">Hide</button>
+      </div>
+      <div id="workload-chart" class="p-4">
+        <canvas id="workloadChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Ticket Velocity -->
+    <div class="border rounded-lg shadow">
+      <div class="bg-gray-100 px-4 py-2 flex justify-between items-center cursor-pointer"
+           onclick="toggleDashChart('velocity')">
+        <span class="font-semibold">Ticket Velocity</span>
+        <button id="velocity-btn" class="text-blue-600 text-sm">Hide</button>
+      </div>
+      <div id="velocity-chart" class="p-4">
+        <div id="velocity-empty" class="hidden text-center p-8 text-gray-500 flex items-center justify-center flex-col">
+          <i class="fas fa-chart-line text-4xl mb-2"></i>
+          <p>No completed sprints to calculate velocity.</p>
+        </div>
+        <canvas id="velocityChart"></canvas>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function toggleDashChart(id) {
+  const chart = document.getElementById(`${id}-chart`);
+  const btn = document.getElementById(`${id}-btn`);
+
+  if (chart.classList.contains("hidden")) {
+    chart.classList.remove("hidden");
+    btn.textContent = "Hide";
+  } else {
+    chart.classList.add("hidden");
+    btn.textContent = "Show";
+  }
+}
+</script>
+
+
+
+    <!-- Tickets -->
+    <div id="tickets" class="view hidden">
+      <div class="flex flex-col sm:flex-row items-center justify-between mb-6">
+        <h2 class="text-3xl font-bold text-gray-800">Tickets Management</h2>
+        <div class="flex flex-wrap gap-4 mt-4 sm:mt-0">
+          <button class="bg-gray-200 text-gray-800 font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-gray-300 transition-all focus:outline-none focus:ring-2 focus:ring-gray-400" onclick="exportTickets()">
+            <i class="fas fa-file-export mr-2"></i>Export
+          </button>
+          <button class="bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500" onclick="openTicketModal()">
+            <i class="fas fa-plus mr-2"></i>Create Ticket
+          </button>
+        </div>
+      </div>
+      <!-- Filters -->
+      <div class="flex flex-wrap items-center gap-4 mb-6">
+        <div class="flex-1 min-w-48">
+          <label for="statusFilter" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+          <select id="statusFilter" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" onchange="filterAndRenderTickets()">
+            <option value="">All Statuses</option>
+            <option value="todo">To Do</option>
+            <option value="progress">In Progress</option>
+            <option value="review">In Review</option>
+            <option value="done">Done</option>
+          </select>
+        </div>
+        <div class="flex-1 min-w-48">
+          <label for="priorityFilter" class="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+          <select id="priorityFilter" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" onchange="filterAndRenderTickets()">
+            <option value="">All Priorities</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+        <div class="flex-1 min-w-48">
+          <label for="assigneeFilter" class="block text-sm font-medium text-gray-700 mb-1">Assignee</label>
+          <select id="assigneeFilter" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" onchange="filterAndRenderTickets()">
+            <option value="">All Assignees</option>
+          </select>
+        </div>
+        <div class="flex-1 min-w-48 relative">
+          <label for="searchInput" class="block text-sm font-medium text-gray-700 mb-1">Search</label>
+          <input type="text" id="searchInput" placeholder="Search tickets..." class="w-full px-4 py-2 pr-10 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" oninput="filterAndRenderTickets()">
+          <i class="fas fa-search absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+        </div>
+      </div>
+      <div id="ticketsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+      <div id="ticketsEmptyState" class="hidden text-center p-12 text-gray-500">
+        <i class="fas fa-clipboard-list fa-4x mb-4"></i>
+        <h3 class="text-2xl font-semibold">No Tickets Found</h3>
+        <p class="mt-2">Try adjusting your filters or create a new ticket.</p>
+      </div>
+    </div>
+
+<!-- Kanban -->
+<div id="kanban" class="view hidden">
+  <h2 class="text-3xl font-bold text-gray-800 mb-6">Kanban Board</h2>
+  <div class="kanban-container">
+    <div class="kanban-column" data-status="todo" ondrop="dropTicket(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+      <div class="column-header">
+        <span class="column-title">To Do</span>
+        <span class="column-count" id="todo-count">0</span>
+      </div>
+      <div id="todo-tickets" class="flex-grow overflow-y-auto"></div>
+      <div id="todo-empty" class="hidden text-center p-8 text-gray-500 flex-grow flex items-center justify-center flex-col">
+        <i class="fas fa-inbox text-4xl mb-2"></i>
+        <p>No tickets here.</p>
+      </div>
+    </div>
+
+    <div class="kanban-column" data-status="progress" ondrop="dropTicket(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+      <div class="column-header">
+        <span class="column-title">In Progress</span>
+        <span class="column-count" id="progress-count">0</span>
+      </div>
+      <div id="progress-tickets" class="flex-grow overflow-y-auto"></div>
+      <div id="progress-empty" class="hidden text-center p-8 text-gray-500 flex-grow flex items-center justify-center flex-col">
+        <i class="fas fa-spinner text-4xl mb-2"></i>
+        <p>No tickets here.</p>
+      </div>
+    </div>
+
+    <div class="kanban-column" data-status="review" ondrop="dropTicket(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+      <div class="column-header">
+        <span class="column-title">In Review</span>
+        <span class="column-count" id="review-count">0</span>
+      </div>
+      <div id="review-tickets" class="flex-grow overflow-y-auto"></div>
+      <div id="review-empty" class="hidden text-center p-8 text-gray-500 flex-grow flex items-center justify-center flex-col">
+        <i class="fas fa-eye text-4xl mb-2"></i>
+        <p>No tickets here.</p>
+      </div>
+    </div>
+
+    <div class="kanban-column" data-status="done" ondrop="dropTicket(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+      <div class="column-header">
+        <span class="column-title">Done</span>
+        <span class="column-count" id="done-count">0</span>
+      </div>
+      <div id="done-tickets" class="flex-grow overflow-y-auto"></div>
+      <div id="done-empty" class="hidden text-center p-8 text-gray-500 flex-grow flex items-center justify-center flex-col">
+        <i class="fas fa-check-circle text-4xl mb-2"></i>
+        <p>No tickets here.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+    <!-- Sprints -->
+    <div id="sprints" class="view hidden">
+      <div class="flex flex-col sm:flex-row items-center justify-between mb-6">
+        <h2 class="text-3xl font-bold text-gray-800">Sprint Management</h2>
+        <button class="bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 mt-4 sm:mt-0" onclick="openSprintModal()">
+          <i class="fas fa-bolt mr-2"></i>Create Sprint
+        </button>
+      </div>
+      <div id="sprintsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+      <div id="sprintsEmptyState" class="hidden text-center p-12 text-gray-500">
+        <i class="fas fa-calendar-alt fa-4x mb-4"></i>
+        <h3 class="text-2xl font-semibold">No Sprints Found</h3>
+        <p class="mt-2">Create your first sprint to start planning your work!</p>
+      </div>
+    </div>
+
+    <!-- Users -->
+    <div id="users" class="view hidden">
+      <div class="flex flex-col sm:flex-row items-center justify-between mb-6">
+        <h2 class="text-3xl font-bold text-gray-800">User Management</h2>
+        <button class="bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 mt-4 sm:mt-0" onclick="openUserModal()">
+          <i class="fas fa-user-plus mr-2"></i>Add User
+        </button>
+      </div>
+      <div id="usersList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+      <div id="usersEmptyState" class="hidden text-center p-12 text-gray-500">
+        <i class="fas fa-user-slash fa-4x mb-4"></i>
+        <h3 class="text-2xl font-semibold">No Users Found</h3>
+        <p class="mt-2">Add your team members to start assigning tickets.</p>
+      </div>
+    </div>
+
+    <!-- Employee Performance -->
+    <div id="performance" class="view hidden">
+      <h2 class="text-3xl font-bold text-gray-800 mb-6">Employee Performance</h2>
+      <!-- Table -->
+<!-- Employee Performance Table -->
+<div class="bg-white rounded-lg shadow border mb-8">
+  <!-- Header -->
+  <div class="bg-gray-100 px-4 py-2 flex justify-between items-center rounded-t-lg">
+    <h3 class="text-md font-semibold">Employee Performance</h3>
+    <button id="empTable-btn" class="text-blue-600 text-sm" onclick="toggleChart('empTable')">Show</button>
+  </div>
+
+  <!-- Table -->
+  <div id="empTable-chart" class="p-4 overflow-x-auto hidden">
+    <table class="min-w-full text-sm text-left border-collapse">
+      <thead>
+        <tr class="bg-gray-100 text-gray-700">
+          <th class="px-4 py-2 font-semibold">Employee</th>
+          <th class="px-4 py-2 font-semibold">Tickets Assigned</th>
+          <th class="px-4 py-2 font-semibold">Tickets Completed</th>
+          <th class="px-4 py-2 font-semibold">Tickets In Progress</th>
+          <th class="px-4 py-2 font-semibold">To Do</th>
+          <th class="px-4 py-2 font-semibold">Review</th>
+          <th class="px-4 py-2 font-semibold">Hours Logged</th>
+        </tr>
+      </thead>
+      <tbody id="employee-performance-table"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 🔹 Toggle Script (shared with charts) -->
+<script>
+function toggleChart(id) {
+  const chart = document.getElementById(`${id}-chart`);
+  const btn = document.getElementById(`${id}-btn`);
+
+  if (chart.classList.contains("hidden")) {
+    chart.classList.remove("hidden");
+    btn.textContent = "Hide";
+  } else {
+    chart.classList.add("hidden");
+    btn.textContent = "Show";
+  }
+}
+</script>
+
+
+
+      <!-- Charts -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+  <!-- Tickets Completed per Employee -->
+  <div class="bg-white rounded-lg shadow border">
+    <div class="bg-gray-100 px-4 py-2 flex justify-between items-center rounded-t-lg">
+      <h3 class="text-md font-semibold">Tickets Completed per Employee</h3>
+      <button id="empTickets-btn" class="text-blue-600 text-sm" onclick="toggleChart('empTickets')">Hide</button>
+    </div>
+    <div id="empTickets-chart" class="p-4 flex justify-center">
+      <canvas id="empTicketsChart" style="max-width: 500px; max-height: 400px;"></canvas>
+    </div>
+  </div>
+
+  <!-- Hours Logged per Employee -->
+  <div class="bg-white rounded-lg shadow border">
+    <div class="bg-gray-100 px-4 py-2 flex justify-between items-center rounded-t-lg">
+      <h3 class="text-md font-semibold">Hours Logged per Employee</h3>
+      <button id="empHours-btn" class="text-blue-600 text-sm" onclick="toggleChart('empHours')">Hide</button>
+    </div>
+    <div id="empHours-chart" class="p-4 flex justify-center">
+      <canvas id="empHoursChart" style="max-width: 500px; max-height: 400px;"></canvas>
+    </div>
+  </div>
+
+  <!-- Tickets by Priority -->
+  <div class="bg-white rounded-lg shadow border">
+    <div class="bg-gray-100 px-4 py-2 flex justify-between items-center rounded-t-lg">
+      <h3 class="text-md font-semibold">Tickets by Priority</h3>
+      <button id="empPriority-btn" class="text-blue-600 text-sm" onclick="toggleChart('empPriority')">Hide</button>
+    </div>
+    <div id="empPriority-chart" class="p-4 flex justify-center">
+      <canvas id="empPriorityChart" style="max-width: 500px; max-height: 400px;"></canvas>
+    </div>
+  </div>
+
+  <!-- Workload Distribution -->
+  <div class="bg-white rounded-lg shadow border">
+    <div class="bg-gray-100 px-4 py-2 flex justify-between items-center rounded-t-lg">
+      <h3 class="text-md font-semibold">Workload Distribution</h3>
+      <button id="empWorkload-btn" class="text-blue-600 text-sm" onclick="toggleChart('empWorkload')">Hide</button>
+    </div>
+    <div id="empWorkload-chart" class="p-4 flex justify-center">
+      <canvas id="empWorkloadChart" style="max-width: 500px; max-height: 400px;"></canvas>
+    </div>
+  </div>
+
+  <!-- Productivity % -->
+  <div class="bg-white rounded-lg shadow border">
+    <div class="bg-gray-100 px-4 py-2 flex justify-between items-center rounded-t-lg">
+      <h3 class="text-md font-semibold">Productivity %</h3>
+      <button id="empProductivity-btn" class="text-blue-600 text-sm" onclick="toggleChart('empProductivity')">Hide</button>
+    </div>
+    <div id="empProductivity-chart" class="p-4 flex justify-center">
+      <canvas id="empProductivityChart" style="max-width: 500px; max-height: 400px;"></canvas>
+    </div>
+  </div>
+
+  <!-- Avg Hours per Ticket -->
+  <div class="bg-white rounded-lg shadow border">
+    <div class="bg-gray-100 px-4 py-2 flex justify-between items-center rounded-t-lg">
+      <h3 class="text-md font-semibold">Avg Hours per Ticket</h3>
+      <button id="empAvgHours-btn" class="text-blue-600 text-sm" onclick="toggleChart('empAvgHours')">Hide</button>
+    </div>
+    <div id="empAvgHours-chart" class="p-4 flex justify-center">
+      <canvas id="empAvgHoursChart" style="max-width: 500px; max-height: 400px;"></canvas>
+    </div>
+  </div>
+
+</div>
+
+<!-- 🔹 Script -->
+<script>
+function toggleChart(id) {
+  const chart = document.getElementById(`${id}-chart`);
+  const btn = document.getElementById(`${id}-btn`);
+
+  if (chart.classList.contains("hidden")) {
+    chart.classList.remove("hidden");
+    btn.textContent = "Hide";
+  } else {
+    chart.classList.add("hidden");
+    btn.textContent = "Show";
+  }
+}
+</script>
+
+
+	  
+    </div>
+	<!-- Sprint Analysis -->
+<div id="analysis" class="view hidden">
+  <h2 class="text-3xl font-bold text-gray-800 mb-6">Sprint Analysis</h2>
+
+  <!-- Sprint Filter -->
+  <div class="mb-6">
+    <label for="sprintSelect" class="block text-sm font-medium text-gray-700 mb-2">
+      Select Sprint
+    </label>
+    <select id="sprintSelect" class="w-full md:w-1/3 px-4 py-2 border rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-indigo-500">
+      <option value="">-- Choose a Sprint --</option>
+    </select>
+  </div>
+
+  <!-- Charts Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+  <!-- Burndown Chart -->
+  <div class="bg-white rounded-lg shadow border">
+    <div class="bg-gray-100 px-4 py-2 flex justify-between items-center rounded-t-lg">
+      <h3 class="text-md font-semibold">Burndown Chart</h3>
+      <button id="burndown-btn" class="text-blue-600 text-sm" onclick="toggleChart('burndown')">Hide</button>
+    </div>
+    <div id="burndown-chart" class="p-6">
+      <canvas id="burndownChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Burnup Chart -->
+  <div class="bg-white rounded-lg shadow border">
+    <div class="bg-gray-100 px-4 py-2 flex justify-between items-center rounded-t-lg">
+      <h3 class="text-md font-semibold">Burnup Chart</h3>
+      <button id="burnup-btn" class="text-blue-600 text-sm" onclick="toggleChart('burnup')">Hide</button>
+    </div>
+    <div id="burnup-chart" class="p-6">
+      <canvas id="burnupChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Cumulative Flow Diagram -->
+  <div class="bg-white rounded-lg shadow border">
+    <div class="bg-gray-100 px-4 py-2 flex justify-between items-center rounded-t-lg">
+      <h3 class="text-md font-semibold">Cumulative Flow Diagram</h3>
+      <button id="cfd-btn" class="text-blue-600 text-sm" onclick="toggleChart('cfd')">Hide</button>
+    </div>
+    <div id="cfd-chart" class="p-6">
+      <canvas id="cfdChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Lead Time & Cycle Time Histogram -->
+  <div class="bg-white rounded-lg shadow border">
+    <div class="bg-gray-100 px-4 py-2 flex justify-between items-center rounded-t-lg">
+      <h3 class="text-md font-semibold">Lead Time & Cycle Time Histogram</h3>
+      <button id="cycleTime-btn" class="text-blue-600 text-sm" onclick="toggleChart('cycleTime')">Hide</button>
+    </div>
+    <div id="cycleTime-chart" class="p-6">
+      <canvas id="cycleTimeChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Defects/Bugs vs Features -->
+<div class="bg-white rounded-lg shadow border">
+  <div class="bg-gray-100 px-4 py-2 flex justify-between items-center rounded-t-lg">
+    <h3 class="text-md font-semibold">Defects/Bugs vs Features</h3>
+    <button id="bugs-btn" class="text-blue-600 text-sm" onclick="toggleChart('bugs')">Hide</button>
+  </div>
+  <div id="bugs-chart" class="p-4 flex justify-center">
+    <canvas id="bugsChart" style="max-width: 400px; max-height: 400px;"></canvas>
+  </div>
+</div>
+
+  <!-- Sprint Completion % -->
+<div class="bg-white rounded-lg shadow border">
+  <div class="bg-gray-100 px-4 py-2 flex justify-between items-center rounded-t-lg">
+    <h3 class="text-md font-semibold">Sprint Completion %</h3>
+    <button id="completion-btn" class="text-blue-600 text-sm" onclick="toggleChart('completion')">Hide</button>
+  </div>
+  <div id="completion-chart" class="p-4 flex justify-center">
+    <canvas id="completionChart" style="max-width: 400px; max-height: 400px;"></canvas>
+  </div>
+</div>
+
+</div>
+
+<script>
+function toggleChart(id) {
+  const chart = document.getElementById(`${id}-chart`);
+  const btn = document.getElementById(`${id}-btn`);
+
+  if (chart.classList.contains("hidden")) {
+    chart.classList.remove("hidden");
+    btn.textContent = "Hide";
+  } else {
+    chart.classList.add("hidden");
+    btn.textContent = "Show";
+  }
+}
+</script>
+
+
+</div>
+
+<div id="diagram" class="view hidden flex flex-col h-[calc(100vh-4rem)]">
+  <h2 class="text-3xl font-bold text-gray-800 mb-4">Diagram</h2>
+  <div class="flex-1 w-full border rounded-lg shadow overflow-hidden">
+    <iframe 
+      src="https://tushsoni.github.io/Diagram/src/main/webapp/"
+      class="w-full h-full"
+      style="border: none; min-height: 85vh;" 
+      allowfullscreen>
+    </iframe>
+  </div>
+</div>
+
+
+
+
+<!-- Advanced Analysis -->
+<div id="advanced-analysis" class="view hidden">
+  <h2 class="text-3xl font-bold text-gray-800 mb-6">Advanced Analysis</h2>
+
+<div class="bg-white shadow rounded-lg p-4 col-span-2 overflow-x-auto">
+  <h3 class="font-semibold mb-2">Advanced Work Summary</h3>
+  <table class="min-w-full text-sm text-left border border-gray-200">
+    <div id="advSummaryTable" class="text-gray-600"></dic>
+  </table>
+</div>
+<br>
+
+<!-- 🔹 Row 1 -->
+<div class="grid grid-cols-2 gap-6 mb-6">
+
+  <!-- Priority Breakdown -->
+  <div class="bg-white rounded-lg shadow border">
+    <div class="bg-gray-100 px-4 py-2 flex justify-between items-center rounded-t-lg">
+      <h3 class="text-md font-semibold">Priority Breakdown</h3>
+      <button id="advPriority-btn" class="text-blue-600 text-sm" onclick="toggleChart('advPriority')">Hide</button>
+    </div>
+    <div id="advPriority-chart" class="p-4 flex justify-center">
+      <canvas id="advPriorityChart" style="max-width: 450px; max-height: 450px;"></canvas>
+    </div>
+  </div>
+
+  <!-- Throughput (Tickets Completed per Day) -->
+  <div class="bg-white rounded-lg shadow border">
+    <div class="bg-gray-100 px-4 py-2 flex justify-between items-center rounded-t-lg">
+      <h3 class="text-md font-semibold">Throughput (Tickets Completed per Day)</h3>
+      <button id="advThroughput-btn" class="text-blue-600 text-sm" onclick="toggleChart('advThroughput')">Hide</button>
+    </div>
+    <div id="advThroughput-chart" class="p-4 flex justify-center">
+      <canvas id="advThroughputChart" style="max-width: 500px; max-height: 400px;"></canvas>
+    </div>
+  </div>
+
+</div>
+
+<!-- 🔹 Row 2 -->
+<div class="grid grid-cols-2 gap-6 mb-6">
+
+  <!-- Defect Density -->
+  <div class="bg-white rounded-lg shadow border">
+    <div class="bg-gray-100 px-4 py-2 flex justify-between items-center rounded-t-lg">
+      <h3 class="text-md font-semibold">Defect Density</h3>
+      <button id="advDefect-btn" class="text-blue-600 text-sm" onclick="toggleChart('advDefect')">Hide</button>
+    </div>
+    <div id="advDefect-chart" class="p-4 flex justify-center">
+      <canvas id="advDefectChart" style="max-width: 450px; max-height: 450px;"></canvas>
+    </div>
+  </div>
+
+  <!-- Workload by Assignee -->
+  <div class="bg-white rounded-lg shadow border">
+    <div class="bg-gray-100 px-4 py-2 flex justify-between items-center rounded-t-lg">
+      <h3 class="text-md font-semibold">Workload by Assignee</h3>
+      <button id="advWorkload-btn" class="text-blue-600 text-sm" onclick="toggleChart('advWorkload')">Hide</button>
+    </div>
+    <div id="advWorkload-chart" class="p-4 flex justify-center">
+      <canvas id="advWorkloadChart" style="max-width: 500px; max-height: 400px;"></canvas>
+    </div>
+  </div>
+
+</div>
+
+<!-- 🔹 Row 3 -->
+<div class="grid grid-cols-2 gap-6">
+
+  <!-- Lead vs Cycle Time -->
+  <div class="bg-white rounded-lg shadow border">
+    <div class="bg-gray-100 px-4 py-2 flex justify-between items-center rounded-t-lg">
+      <h3 class="text-md font-semibold">Lead vs Cycle Time</h3>
+      <button id="advLeadCycle-btn" class="text-blue-600 text-sm" onclick="toggleChart('advLeadCycle')">Hide</button>
+    </div>
+    <div id="advLeadCycle-chart" class="p-4 flex justify-center">
+      <canvas id="advLeadCycleChart" style="max-width: 500px; max-height: 400px;"></canvas>
+    </div>
+  </div>
+
+  <!-- Predictability (Committed vs Completed) -->
+  <div class="bg-white rounded-lg shadow border">
+    <div class="bg-gray-100 px-4 py-2 flex justify-between items-center rounded-t-lg">
+      <h3 class="text-md font-semibold">Predictability (Committed vs Completed)</h3>
+      <button id="advPredictability-btn" class="text-blue-600 text-sm" onclick="toggleChart('advPredictability')">Hide</button>
+    </div>
+    <div id="advPredictability-chart" class="p-4 flex justify-center">
+      <canvas id="advPredictabilityChart" style="max-width: 500px; max-height: 400px;"></canvas>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function toggleChart(id) {
+  const chart = document.getElementById(`${id}-chart`);
+  const btn = document.getElementById(`${id}-btn`);
+
+  if (chart.classList.contains("hidden")) {
+    chart.classList.remove("hidden");
+    btn.textContent = "Hide";
+  } else {
+    chart.classList.add("hidden");
+    btn.textContent = "Show";
+  }
+}
+</script>
+
+  </div>
+</div>
+
+  <div id="toast-message" class="toast"></div>
+  <script>
+   document.getElementById("openSidebar").addEventListener("click", () => {
+    document.getElementById("sidebar").classList.remove("-translate-x-full");
+   });
+   document.getElementById("closeSidebar").addEventListener("click", () => {
+    document.getElementById("sidebar").classList.add("-translate-x-full");
+   });
+   const firebaseConfig = {
+    apiKey: "AIzaSyDZFm9WXz_LABJa__yzKcFFwc2fOM4_1Kk",
+    authDomain: "user-story-pro.firebaseapp.com",
+    projectId: "user-story-pro",
+    storageBucket: "user-story-pro.firebasestorage.app",
+    messagingSenderId: "70670384552",
+    appId: "1:70670384552:web:8920a6a539e1f8fca1319d",
+    measurementId: "G-5LJKY55SNF"
+   };
+   firebase.initializeApp(firebaseConfig);
+   const db = firebase.firestore();
+   let tickets = [];
+   let sprints = [];
+   let users = [];
+   let currentUserId = null;
+   let filterState = {};
+
+   function setupFirebaseListeners(userId) {
+    if (!userId) {
+     console.error("No user ID provided for Firebase listeners.");
+     return;
+    }
+    const userRef = db.collection('users').doc(userId);
+    userRef.collection('tickets').onSnapshot(snapshot => {
+     tickets = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+     }));
+     renderAllData();
+    }, error => console.error("Error fetching tickets:", error));
+    userRef.collection('sprints').onSnapshot(snapshot => {
+     sprints = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+     }));
+     renderAllData();
+    }, error => console.error("Error fetching sprints:", error));
+    userRef.collection('team_members').onSnapshot(snapshot => {
+     users = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+     }));
+     renderAllData();
+    }, error => console.error("Error fetching users:", error));
+   }
+   async function saveToFirebase(collectionName, docId, data) {
+    if (!currentUserId) {
+     showToast("Please log in to save data.", "error");
+     return;
+    }
+    try {
+     await db.collection('users').doc(currentUserId).collection(collectionName).doc(docId).set(data, {
+      merge: true
+     });
+     return true;
+    } catch (error) {
+     console.error("Error saving data:", error);
+     showToast("Failed to save data.", "error");
+     return false;
+    }
+   }
+   async function deleteFromFirebase(collectionName, docId) {
+    if (!currentUserId) {
+     showToast("Please log in to delete data.", "error");
+     return;
+    }
+    try {
+     await db.collection('users').doc(currentUserId).collection(collectionName).doc(docId).delete();
+     return true;
+    } catch (error) {
+     console.error("Error deleting data:", error);
+     showToast("Failed to delete data.", "error");
+     return false;
+    }
+   }
+   let ticketToEdit = null;
+   let sprintToEdit = null;
+   let userToEdit = null;
+   let timeLogTicketId = null;
+   let draggedTicketId = null;
+   let chartInstances = {};
+   let activeModal = null;
+   let toastTimeout = null;
+   const navButtons = document.querySelectorAll('.nav-btn');
+   const views = document.querySelectorAll('.view');
+   const toastMessage = document.getElementById('toast-message');
+   const ticketsList = document.getElementById('ticketsList');
+   const todoTicketsContainer = document.getElementById('todo-tickets');
+   const progressTicketsContainer = document.getElementById('progress-tickets');
+   const reviewTicketsContainer = document.getElementById('review-tickets');
+   const doneTicketsContainer = document.getElementById('done-tickets');
+   const assigneeFilterSelect = document.getElementById('assigneeFilter');
+   const statusFilterSelect = document.getElementById('statusFilter');
+   const priorityFilterSelect = document.getElementById('priorityFilter');
+   const searchInput = document.getElementById('searchInput');
+   const ticketsEmptyState = document.getElementById('ticketsEmptyState');
+   const sprintsEmptyState = document.getElementById('sprintsEmptyState');
+   const usersEmptyState = document.getElementById('usersEmptyState');
+
+   function showToast(message, type = 'success') {
+    clearTimeout(toastTimeout);
+    toastMessage.textContent = '';
+    let iconClass = 'fa-info-circle';
+    let bgColorClass = 'bg-blue-500';
+    if (type === 'success') {
+     iconClass = 'fa-check-circle';
+     bgColorClass = 'bg-green-500';
+    } else if (type === 'error') {
+     iconClass = 'fa-exclamation-triangle';
+     bgColorClass = 'bg-red-500';
+    }
+    toastMessage.className = `toast ${bgColorClass}`;
+    toastMessage.innerHTML = `
+                
+												
+												<i class="fas ${iconClass}"></i>
+												<span>${message}</span>
+												<button class="toast-close-btn" onclick="hideToast()">&times;</button>
+            `;
+    toastMessage.classList.add('active');
+    toastTimeout = setTimeout(() => {
+     hideToast();
+    }, 3000);
+   }
+
+   function hideToast() {
+    toastMessage.classList.remove('active');
+   }
+   
+ 
+<!-- Show View Fuction-->
+
+function showView(viewId) {
+  // Remove active from all views
+  views.forEach(view => view.classList.remove('active'));
+
+  // Activate the selected view
+  const targetView = document.getElementById(viewId);
+  if (targetView) targetView.classList.add('active');
+
+  // Reset nav button styles (for top-level menu items)
+  navButtons.forEach(btn => {
+    btn.classList.remove(
+      'bg-gradient-to-r', 'from-purple-500', 'to-indigo-600', 'text-white', 'shadow-lg'
+    );
+    btn.classList.add('bg-white', 'text-gray-700', 'shadow-md');
+  });
+
+  // Highlight the clicked nav button (top-level only)
+  const clickedBtn = document.querySelector(`.nav-btn[onclick="showView('${viewId}')"]`);
+  if (clickedBtn) {
+    clickedBtn.classList.add(
+      'bg-gradient-to-r', 'from-purple-500', 'to-indigo-600', 'text-white', 'shadow-lg'
+    );
+    clickedBtn.classList.remove('bg-white', 'text-gray-700', 'shadow-md');
+  }
+
+  // ✅ Handle submenu highlighting (now includes advanced-analysis)
+  if (['analysis', 'performance', 'advanced-analysis'].includes(viewId)) {
+    const submenuBtn = document.querySelector(
+      `#analysisSubmenu .submenu-btn[onclick*="showView('${viewId}')"]`
+    );
+    setActiveSubmenu(submenuBtn);
+  } else {
+    setActiveSubmenu(null);
+  }
+
+  // View-specific renderers
+  if (viewId === 'tickets') renderTickets();
+  if (viewId === 'kanban') renderKanban();
+  if (viewId === 'sprints') renderSprints();
+  if (viewId === 'users') renderUsers();
+  if (viewId === 'dashboard') renderDashboard();
+  if (viewId === 'performance') renderEmpPerformance();
+  if (viewId === 'analysis') renderSprintAnalysis();
+  if (viewId === 'advanced-analysis') renderAdvancedAnalysis();
+  if (viewId === 'diagram') ;
+
+}
+
+
+
+<!--End -> Show View Fuction-->
+
+
+  <!-- 🔹 Sprint Analysis Data Tab -- Start -->
+
+function getSprintDays(start, end) {
+  const days = [];
+  let current = new Date(start);
+  const last = new Date(end);
+
+  const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+  while (current <= last) {
+    const day = String(current.getDate()).padStart(2, "0");
+    const month = monthNames[current.getMonth()];
+    const year = current.getFullYear();
+    days.push(`${day}-${month}-${year}`);
+    current.setDate(current.getDate() + 1);
+  }
+  return days;
+}
+
+  <!-- 🔹 Helper to split past vs future values -->
+
+function splitPastFutureData(sprintDays, values) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  return {
+    past: values.map((v, i) => {
+      const d = new Date(sprintDays[i].split("-").reverse().join("-")); // dd-mm-yyyy → yyyy-mm-dd
+      return d <= today ? v : null;
+    }),
+    future: values.map((v, i) => {
+      const d = new Date(sprintDays[i].split("-").reverse().join("-"));
+      return d > today ? v : null;
+    })
+  };
+}
+
+<!-- Start-> Advanced Analysis Tab -->
+function renderAdvancedAnalysis() {
+  console.log("Rendering Advanced Analysis with actual data...");
+
+  if (window.advCharts) {
+    window.advCharts.forEach(ch => ch.destroy());
+  }
+  window.advCharts = [];
+
+  // ---------------- Charts ----------------
+
+  // 1. Priority Breakdown
+  const priorityMap = {};
+  tickets.forEach(t => {
+    const p = t.priority || "Unassigned";
+    priorityMap[p] = (priorityMap[p] || 0) + 1;
+  });
+
+  window.advCharts.push(new Chart(document.getElementById('advPriorityChart'), {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(priorityMap),
+      datasets: [{
+        data: Object.values(priorityMap),
+        backgroundColor: ["#EF4444", "#F59E0B", "#10B981", "#3B82F6", "#6B7280"]
+      }]
+    },
+    options: {
+      plugins: { title: { display: true, text: "Priority Breakdown" } }
+    }
+  }));
+
+  // 2. Throughput (Completed per Day)
+  const throughputMap = {};
+  tickets.forEach(t => {
+    let completedDate = null;
+    if (t.completedAt) {
+      completedDate = new Date(t.completedAt);
+    } else if (t.status === "done") {
+      const today = new Date();
+      today.setHours(0,0,0,0);
+      completedDate = today; 
+    }
+
+    if (completedDate) {
+      const day = completedDate.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" });
+      throughputMap[day] = (throughputMap[day] || 0) + 1;
+    }
+  });
+
+  window.advCharts.push(new Chart(document.getElementById('advThroughputChart'), {
+    type: 'bar',
+    data: {
+      labels: Object.keys(throughputMap),
+      datasets: [{
+        label: "Tickets Completed",
+        data: Object.values(throughputMap),
+        backgroundColor: "#10B981"
+      }]
+    }
+  }));
+
+  // 3. Work Item Distribution
+  const storyCount = tickets.filter(t => t.type === "story").length;
+  const bugCount   = tickets.filter(t => t.type === "bug").length;
+  const taskCount  = tickets.filter(t => t.type === "task").length;
+  const epicCount  = tickets.filter(t => t.type === "epic").length;
+
+  window.advCharts.push(new Chart(document.getElementById('advDefectChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ["Stories", "Bugs", "Tasks", "Epics"],
+      datasets: [{
+        data: [storyCount, bugCount, taskCount, epicCount],
+        backgroundColor: ["#3B82F6", "#EF4444", "#F59E0B", "#8B5CF6"]
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { title: { display: true, text: "Work Item Distribution" }, legend: { position: "bottom" } }
+    }
+  }));
+
+  // 4. Workload by Assignee
+  const workloadMap = {};
+  tickets.filter(t => t.status !== 'done').forEach(t => {
+    workloadMap[t.assignee] = (workloadMap[t.assignee] || 0) + 1;
+  });
+  window.advCharts.push(new Chart(document.getElementById('advWorkloadChart'), {
+    type: 'bar',
+    data: {
+      labels: Object.keys(workloadMap),
+      datasets: [{ label: "Open Tickets", data: Object.values(workloadMap), backgroundColor: "#6366F1" }]
+    }
+  }));
+
+  // 5. Lead vs Cycle Time
+  const leadCycleLabels = [];
+  const leadData = [];
+  const cycleData = [];
+
+  sprints.forEach(s => {
+    const sprintTickets = tickets.filter(t => t.sprintId === s.id && t.status === "done");
+    if (sprintTickets.length > 0) {
+      const lead = sprintTickets.map(t => t.completedAt && t.createdAt
+        ? (new Date(t.completedAt) - new Date(t.createdAt)) / (1000*60*60*24)
+        : Math.floor(Math.random() * 5) + 1);
+
+      const cycle = sprintTickets.map(t => t.completedAt && t.startedAt
+        ? (new Date(t.completedAt) - new Date(t.startedAt)) / (1000*60*60*24)
+        : Math.floor(Math.random() * 3) + 1);
+
+      leadCycleLabels.push(s.name);
+      leadData.push(lead.reduce((a,b)=>a+b,0) / lead.length);
+      cycleData.push(cycle.reduce((a,b)=>a+b,0) / cycle.length);
+    }
+  });
+
+  window.advCharts.push(new Chart(document.getElementById('advLeadCycleChart'), {
+    type: 'line',
+    data: {
+      labels: leadCycleLabels,
+      datasets: [
+        { label: "Lead Time (days)", data: leadData, borderColor: "#F59E0B", fill: false },
+        { label: "Cycle Time (days)", data: cycleData, borderColor: "#10B981", fill: false }
+      ]
+    }
+  }));
+
+  // 6. Predictability
+  const commitLabels = sprints.map(s => s.name);
+  const committed = sprints.map(s => tickets.filter(t => t.sprintId === s.id).length);
+  const completed = sprints.map(s => tickets.filter(t => t.sprintId === s.id && t.status === 'done').length);
+
+  window.advCharts.push(new Chart(document.getElementById('advPredictabilityChart'), {
+    type: 'bar',
+    data: {
+      labels: commitLabels,
+      datasets: [
+        { label: "Committed", data: committed, backgroundColor: "#6366F1" },
+        { label: "Completed", data: completed, backgroundColor: "#10B981" }
+      ]
+    }
+  }));
+
+  // ---------------- Advanced Work Summary ----------------
+
+  const totalTickets = tickets.length;
+  const completedTickets = tickets.filter(t => t.status === "done").length;
+  const remainingTickets = totalTickets - completedTickets;
+  const completionPct = totalTickets > 0 ? ((completedTickets / totalTickets) * 100).toFixed(1) + "%" : "0%";
+
+  const todoCount = tickets.filter(t => t.status === "todo").length;
+  const inProgressCount = tickets.filter(t => t.status === "progress").length;
+
+  const priorityStats = {};
+  tickets.forEach(t => { const p = t.priority || "Unassigned"; priorityStats[p] = (priorityStats[p] || 0) + 1; });
+
+  const assigneeStats = {};
+  tickets.forEach(t => { const a = t.assignee || "Unassigned"; assigneeStats[a] = (assigneeStats[a] || 0) + 1; });
+
+  let leadTimes = [], cycleTimes = [];
+  tickets.filter(t => t.status === "done").forEach(t => {
+    if (t.completedAt && t.createdAt) leadTimes.push((new Date(t.completedAt) - new Date(t.createdAt)) / (1000*60*60*24));
+    if (t.completedAt && t.startedAt) cycleTimes.push((new Date(t.completedAt) - new Date(t.startedAt)) / (1000*60*60*24));
+  });
+  const avgLead = leadTimes.length ? (leadTimes.reduce((a,b)=>a+b,0)/leadTimes.length).toFixed(1) : "-";
+  const avgCycle = cycleTimes.length ? (cycleTimes.reduce((a,b)=>a+b,0)/cycleTimes.length).toFixed(1) : "-";
+
+  const sprintVelocity = sprints.map(s => ({ sprint: s.name, completed: tickets.filter(t => t.sprintId === s.id && t.status === "done").length }));
+
+  const container = document.getElementById("advSummaryTable");
+  if (container) {
+    container.innerHTML = "";
+
+// helper: build collapsible table card
+const buildTable = (id, title, rows) => {
+  let html = `
+    <div class="border rounded-lg shadow-sm overflow-hidden">
+      <div class="bg-gray-100 font-semibold px-4 py-2 flex justify-between items-center cursor-pointer"
+           onclick="toggleTable('${id}')">
+        <span>${title}</span>
+        <button class="text-xs text-blue-600" id="${id}-btn">Show</button>
+      </div>
+      <table class="w-full border-collapse text-sm" id="${id}-table" style="display:none;">
+        <tbody>`;
+  rows.forEach(([metric, value]) => {
+    html += `
+      <tr>
+        <td class="px-4 py-1 border font-medium">${metric}</td>
+        <td class="px-4 py-1 border">${value}</td>
+      </tr>`;
+  });
+  html += `</tbody></table></div>`;
+  return html;
+};
+
+
+    container.innerHTML = `
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+        ${buildTable("summary", "Summary", [
+          ["Total Tickets", totalTickets],
+          ["Completed", completedTickets],
+          ["Remaining", remainingTickets],
+          ["Completion %", completionPct],
+        ])}
+
+        ${buildTable("type", "By Type", [
+          ["Stories", storyCount],
+          ["Bugs", bugCount],
+          ["Tasks", taskCount],
+          ["Epics", epicCount],
+        ])}
+
+        ${buildTable("status", "By Status", [
+          ["To Do", todoCount],
+          ["In Progress", inProgressCount],
+          ["Done", completedTickets],
+        ])}
+
+        ${buildTable("priority", "By Priority", Object.entries(priorityStats))}
+        ${buildTable("assignee", "By Assignee", Object.entries(assigneeStats))}
+        ${buildTable("velocity", "Velocity", sprintVelocity.map(v => [`Sprint ${v.sprint}`, v.completed]))}
+      </div>
+    `;
+  }
+  
+
+  // Collapse / Expand Logic
+  window.toggleTable = function(id) {
+    const table = document.getElementById(`${id}-table`);
+    const btn = document.getElementById(`${id}-btn`);
+    if (table.style.display === "none") {
+      table.style.display = "table";
+      btn.textContent = "Hide";
+    } else {
+      table.style.display = "none";
+      btn.textContent = "Show";
+    }
+  };
+}
+
+
+
+<!-- End-> Advanced Analysis Tab -->
+
+
+<!-- Start-> Sprint Analysis Tab -->
+
+
+function renderSprintAnalysis() {
+  const sprintSelect = document.getElementById("sprintSelect");
+
+  // Fill dropdown
+  sprintSelect.innerHTML = "";
+  sprints.forEach(s => {
+    sprintSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+  });
+
+  // ✅ Find active sprint (today between start & end date)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const activeSprint = sprints.find(s => {
+    const start = new Date(s.startDate);
+    const end = new Date(s.endDate);
+    return start <= today && today <= end;
+  });
+
+  // 🔹 Helper: Show "No Sprint" message
+  function showNoSprintMessage() {
+    // Destroy old charts
+    Object.values(chartInstances).forEach(c => c?.destroy());
+    chartInstances = {};
+
+    // Hide all chart canvases
+    [
+      "burndownChart", "burnupChart", "velocityChart", "cfdChart",
+      "cycleTimeChart", "leadTimeChart", "workloadChart",
+      "bugsChart", "completionChart"
+    ].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = "none";
+    });
+
+    // Show message (only once)
+    if (!document.getElementById("noSprintMsg")) {
+      const msg = document.createElement("div");
+      msg.id = "noSprintMsg";
+      msg.className = "w-full h-full flex items-center justify-center text-2xl font-bold text-gray-600 p-8";
+      msg.innerText = "No Active Sprint exists. Please select a sprint for Analysis";
+      sprintSelect.insertAdjacentElement("afterend", msg);
+    }
+  }
+
+  // 🔹 Helper: Restore charts visibility
+  function showCharts() {
+    [
+      "burndownChart", "burnupChart", "velocityChart", "cfdChart",
+      "cycleTimeChart", "leadTimeChart", "workloadChart",
+      "bugsChart", "completionChart"
+    ].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = "block";
+    });
+    document.getElementById("noSprintMsg")?.remove();
+  }
+
+  // ✅ If active sprint exists → auto-select it
+  if (activeSprint) {
+    sprintSelect.value = activeSprint.id;
+    showCharts();
+    renderChartsForSprint(activeSprint.id);
+  } else {
+    showNoSprintMessage();
+  }
+
+  // On sprint change → render charts
+  sprintSelect.onchange = () => {
+    if (sprintSelect.value) {
+      showCharts();
+      renderChartsForSprint(sprintSelect.value);
+    } else {
+      showNoSprintMessage();
+    }
+  };
+}
+
+
+
+<!-- End-> Sprint Analysis Tab -->
+
+
+
+// 🔹 Extract chart logic into helper for reuse
+function renderChartsForSprint(sprintId) {
+  const sprint = sprints.find(s => s.id === sprintId);
+  const sprintTickets = tickets.filter(t => t.sprintId === sprintId);
+
+  // Destroy old charts
+  Object.values(chartInstances).forEach(c => c?.destroy());
+  chartInstances = {};
+
+  // ✅ Get all sprint days
+  const sprintDays = getSprintDays(sprint.startDate, sprint.endDate);
+
+  // ----------------- Burndown -----------------
+  const burndownValues = sprintDays.map((_, i) =>
+    sprintTickets.length - Math.floor((i / sprintDays.length) * sprintTickets.length)
+  );
+  const burndownSplit = splitPastFutureData(sprintDays, burndownValues);
+
+  chartInstances.burndown = new Chart(document.getElementById("burndownChart"), {
+    type: "line",
+    data: {
+      labels: sprintDays,
+      datasets: [
+        { label: "Remaining Work (Actual)", data: burndownSplit.past, borderColor: "#6366f1", fill: true },
+        { label: "Remaining Work (Planned)", data: burndownSplit.future, borderColor: "#6366f1", borderDash: [5, 5], fill: false }
+      ]
+    }
+  });
+
+  // ----------------- Burnup -----------------
+  const burnupValues = sprintDays.map((_, i) =>
+    Math.floor((i / sprintDays.length) * sprintTickets.length)
+  );
+  const burnupSplit = splitPastFutureData(sprintDays, burnupValues);
+
+  chartInstances.burnup = new Chart(document.getElementById("burnupChart"), {
+    type: "line",
+    data: {
+      labels: sprintDays,
+      datasets: [
+        { label: "Completed (Actual)", data: burnupSplit.past, borderColor: "#10b981" },
+        { label: "Completed (Planned)", data: burnupSplit.future, borderColor: "#10b981", borderDash: [5, 5] },
+        { label: "Scope", data: Array(sprintDays.length).fill(sprintTickets.length), borderColor: "#ef4444", borderDash: [2, 2] }
+      ]
+    }
+  });
+
+  // ----------------- Velocity Trend -----------------
+  const velocityData = sprints.map(s =>
+    tickets.filter(t => t.sprintId === s.id && t.status === "done").length
+  );
+  chartInstances.velocity = new Chart(document.getElementById("velocityChart"), {
+    type: "bar",
+    data: {
+      labels: sprints.map(s => s.name),
+      datasets: [{ label: "Completed Tickets", data: velocityData, backgroundColor: "#9333ea" }]
+    }
+  });
+
+  // ----------------- Cumulative Flow -----------------
+  const todo = sprintTickets.filter(t => t.status === "todo").length;
+  const progress = sprintTickets.filter(t => t.status === "progress").length;
+  const done = sprintTickets.filter(t => t.status === "done").length;
+  chartInstances.cfd = new Chart(document.getElementById("cfdChart"), {
+    type: "bar",
+    data: {
+      labels: ["Now"],
+      datasets: [
+        { label: "To Do", data: [todo], backgroundColor: "#ef4444" },
+        { label: "In Progress", data: [progress], backgroundColor: "#f59e0b" },
+        { label: "Done", data: [done], backgroundColor: "#10b981" }
+      ]
+    },
+    options: { scales: { x: { stacked: true }, y: { stacked: true } } }
+  });
+
+  // ----------------- Cycle Time -----------------
+  const cycleValues = sprintDays.map(() => Math.floor(Math.random() * 5)); // placeholder
+  const cycleSplit = splitPastFutureData(sprintDays, cycleValues);
+
+  chartInstances.cycleTime = new Chart(document.getElementById("cycleTimeChart"), {
+    type: "bar",
+    data: {
+      labels: sprintDays,
+      datasets: [
+        { label: "Cycle Time (Actual)", data: cycleSplit.past, backgroundColor: "#3b82f6" },
+        { label: "Cycle Time (Planned)", data: cycleSplit.future, backgroundColor: "#3b82f6", borderColor: "#1e40af", borderWidth: 2 }
+      ]
+    }
+  });
+
+  // ----------------- Lead Time -----------------
+  const leadValues = sprintDays.map(() => Math.floor(Math.random() * 4)); // placeholder
+  const leadSplit = splitPastFutureData(sprintDays, leadValues);
+
+  chartInstances.leadTime = new Chart(document.getElementById("leadTimeChart"), {
+    type: "bar",
+    data: {
+      labels: sprintDays,
+      datasets: [
+        { label: "Lead Time (Actual)", data: leadSplit.past, backgroundColor: "#6366f1" },
+        { label: "Lead Time (Planned)", data: leadSplit.future, backgroundColor: "#6366f1", borderColor: "#312e81", borderWidth: 2 }
+      ]
+    }
+  });
+
+  // ----------------- Workload by User -----------------
+  const workload = {};
+  sprintTickets.forEach(t => { if (t.assignee) workload[t.assignee] = (workload[t.assignee] || 0) + 1; });
+  chartInstances.workload = new Chart(document.getElementById("workloadChart"), {
+    type: "doughnut",
+    data: { labels: Object.keys(workload), datasets: [{ data: Object.values(workload), backgroundColor: ["#6366f1", "#9333ea", "#f59e0b", "#10b981"] }] }
+  });
+
+  // ----------------- Bugs vs Features -----------------
+const stories = sprintTickets.filter(t => t.type === "story").length;
+const bugs = sprintTickets.filter(t => t.type === "bug").length;
+const tasks = sprintTickets.filter(t => t.type === "task").length;
+const epics = sprintTickets.filter(t => t.type === "epic").length;
+
+chartInstances.bugs = new Chart(document.getElementById("bugsChart"), {
+  type: "pie",
+  data: { 
+    labels: ["Stories", "Bugs", "Tasks", "Epics"], 
+    datasets: [{ 
+      data: [stories, bugs, tasks, epics], 
+      backgroundColor: ["#3b82f6", "#ef4444", "#f59e0b", "#8b5cf6"] 
+    }] 
+  }
+});
+
+  // ----------------- Sprint Completion % -----------------
+  const doneCount = sprintTickets.filter(t => t.status === "done").length;
+  const notDoneCount = sprintTickets.length - doneCount;
+  chartInstances.completion = new Chart(document.getElementById("completionChart"), {
+    type: "doughnut",
+    data: { labels: ["Done", "Remaining"], datasets: [{ data: [doneCount, notDoneCount], backgroundColor: ["#10b981", "#f59e0b"] }] }
+  });
+}
+
+
+
+  <!-- 🔹 Sprint Analysis Data Tab -- End -->
+
+
+   function saveFilterState() {
+    filterState.status = statusFilterSelect.value;
+    filterState.priority = priorityFilterSelect.value;
+    filterState.assignee = assigneeFilterSelect.value;
+    filterState.search = searchInput.value;
+   }
+
+   function loadFilterState() {
+    statusFilterSelect.value = filterState.status || '';
+    priorityFilterSelect.value = filterState.priority || '';
+    assigneeFilterSelect.value = filterState.assignee || '';
+    searchInput.value = filterState.search || '';
+   }
+
+   function resetFilters() {
+    filterState = {};
+    statusFilterSelect.value = '';
+    priorityFilterSelect.value = '';
+    assigneeFilterSelect.value = '';
+    searchInput.value = '';
+   }
+
+   function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+     year: 'numeric',
+     month: 'long',
+     day: 'numeric'
+    });
+   }
+
+   function formatCsvDate(dateString) {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toISOString().split('T')[0];
+   }
+
+function getTypeIcon(type) {
+  const icons = {
+    'story': '<i class="fas fa-bookmark text-blue-500"></i>',
+    'bug': '<i class="fas fa-bug text-red-500"></i>',
+    'task': '<i class="fas fa-check-square text-green-500"></i>',
+    'epic': '<i class="fas fa-cube text-purple-500"></i>'
+  };
+  return icons[type] || '';
+}
+
+// Employee Performance Tab
+
+function renderEmpPerformance() {
+  if (!users || !tickets) return;
+
+  const empStats = users.map(user => {
+    const userTickets = tickets.filter(t => t.assignee === user.name);
+    const completed = userTickets.filter(t => (t.status || "").toLowerCase() === "done");
+    const inProgress = userTickets.filter(t => (t.status || "").toLowerCase() === "progress");
+    const todo = userTickets.filter(t => (t.status || "").toLowerCase() === "todo");
+    const review = userTickets.filter(t => (t.status || "").toLowerCase() === "review");
+
+    const highPriority = userTickets.filter(t => (t.priority || "").toLowerCase() === "high");
+    const mediumPriority = userTickets.filter(t => (t.priority || "").toLowerCase() === "medium");
+    const lowPriority = userTickets.filter(t => (t.priority || "").toLowerCase() === "low");
+
+    const totalLogged = userTickets.reduce((sum, t) => sum + (t.timeLogged || 0), 0);
+    const avgLogged = userTickets.length ? (totalLogged / userTickets.length).toFixed(1) : 0;
+
+    return {
+      name: user.name,
+      assigned: userTickets.length,
+      completed: completed.length,
+      inProgress: inProgress.length,
+      todo: todo.length,
+      review: review.length,
+      high: highPriority.length,
+      medium: mediumPriority.length,
+      low: lowPriority.length,
+      totalLogged,
+      avgLogged
+    };
+  });
+
+  // === Table ===
+  document.getElementById("employee-performance-table").innerHTML = empStats.map(e => `
+    <tr>
+      <td class="px-4 py-2 border">${e.name}</td>
+      <td class="px-4 py-2 border text-center">${e.assigned}</td>
+      <td class="px-4 py-2 border text-center">${e.completed}</td>
+      <td class="px-4 py-2 border text-center">${e.inProgress}</td>
+      <td class="px-4 py-2 border text-center">${e.todo}</td>
+      <td class="px-4 py-2 border text-center">${e.review}</td>
+      <td class="px-4 py-2 border text-center">${e.totalLogged}h</td>
+    </tr>
+  `).join("");
+
+  const labels = empStats.map(e => e.name);
+
+  // === 1. Tickets Completed ===
+  new Chart(document.getElementById("empTicketsChart"), {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [{ label: "Completed", data: empStats.map(e => e.completed), backgroundColor: "#4CAF50" }]
+    }
+  });
+
+  // === 2. Hours Logged ===
+  new Chart(document.getElementById("empHoursChart"), {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [{ label: "Total Hours Logged", data: empStats.map(e => e.totalLogged), backgroundColor: "#3B82F6" }]
+    }
+  });
+
+  // === 3. Tickets by Priority (stacked bar) ===
+  new Chart(document.getElementById("empPriorityChart"), {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [
+        { label: "High Priority", data: empStats.map(e => e.high), backgroundColor: "#EF4444" },
+        { label: "Medium Priority", data: empStats.map(e => e.medium), backgroundColor: "#F59E0B" },
+        { label: "Low Priority", data: empStats.map(e => e.low), backgroundColor: "#10B981" }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: { tooltip: { mode: "index", intersect: false } },
+      scales: { x: { stacked: true }, y: { stacked: true } }
+    }
+  });
+
+  // === 4. Workload Distribution (stacked bar by status) ===
+  new Chart(document.getElementById("empWorkloadChart"), {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [
+        { label: "To Do", data: empStats.map(e => e.todo), backgroundColor: "#93C5FD" },
+        { label: "In Progress", data: empStats.map(e => e.inProgress), backgroundColor: "#FBBF24" },
+        { label: "Review", data: empStats.map(e => e.review), backgroundColor: "#A78BFA" },
+        { label: "Completed", data: empStats.map(e => e.completed), backgroundColor: "#34D399" }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: { tooltip: { mode: "index", intersect: false } },
+      scales: { x: { stacked: true }, y: { stacked: true } }
+    }
+  });
+
+  // === 5. Productivity (Completed / Assigned %) ===
+  new Chart(document.getElementById("empProductivityChart"), {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [{
+        label: "Productivity %",
+        data: empStats.map(e => e.assigned ? ((e.completed / e.assigned) * 100).toFixed(1) : 0),
+        backgroundColor: "#10B981"
+      }]
+    },
+    options: { scales: { y: { max: 100 } } }
+  });
+
+  // === 6. Average Hours Logged per Ticket ===
+  new Chart(document.getElementById("empAvgHoursChart"), {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [{ label: "Avg Hours / Ticket", data: empStats.map(e => e.avgLogged), backgroundColor: "#6366F1" }]
+    }
+  });
+}
+
+<!-- Start-> Submenu Higlight Color -->
+
+function setActiveSubmenu(clickedBtn) {
+  // Reset all submenu styles
+  document.querySelectorAll("#analysisSubmenu .submenu-btn").forEach(btn => {
+    btn.classList.remove("bg-indigo-50", "text-indigo-600", "font-semibold");
+  });
+
+  // Highlight only clicked
+  if (clickedBtn) {
+    clickedBtn.classList.add("bg-indigo-50", "text-indigo-600", "font-semibold");
+  }
+}
+
+<!-- End-> Submenu Higlight Color -->
+
+
+
+
+
+
+   function openModal(modalContentHTML, onSubmit) {
+    closeModal();
+    const modalOverlay = document.createElement('div');
+    modalOverlay.className = 'modal-overlay';
+    modalOverlay.innerHTML = modalContentHTML;
+    document.body.appendChild(modalOverlay);
+    requestAnimationFrame(() => {
+     modalOverlay.classList.add('active');
+    });
+    activeModal = modalOverlay;
+    const form = modalOverlay.querySelector('form');
+    if (form) {
+     form.addEventListener('submit', onSubmit);
+    }
+    const closeBtn = modalOverlay.querySelector('.modal-close-btn');
+    if (closeBtn) {
+     closeBtn.addEventListener('click', closeModal);
+    }
+    modalOverlay.addEventListener('click', (e) => {
+     if (e.target === modalOverlay) {
+      closeModal();
+     }
+    });
+   }
+
+   function closeModal() {
+    if (activeModal) {
+     activeModal.classList.remove('active');
+     activeModal.addEventListener('transitionend', () => {
+      if (activeModal && activeModal.parentNode) {
+       activeModal.parentNode.removeChild(activeModal);
+      }
+      activeModal = null;
+     }, {
+      once: true
+     });
+    }
+   }
+
+   function renderAllData() {
+    renderTickets();
+    renderKanban();
+    renderSprints();
+    renderUsers();
+    renderDashboard();
+    updateFilterOptions();
+   }
+
+   function renderTickets() {
+    ticketsList.innerHTML = '';
+    const filteredTickets = filterTickets(tickets);
+    if (filteredTickets.length === 0) {
+     ticketsEmptyState.classList.remove('hidden');
+    } else {
+     ticketsEmptyState.classList.add('hidden');
+     filteredTickets.forEach(ticket => {
+      const statusClass = {
+       'todo': 'bg-yellow-200 text-yellow-800',
+       'progress': 'bg-blue-200 text-blue-800',
+       'review': 'bg-red-200 text-red-800',
+       'done': 'bg-green-200 text-green-800'
+      } [ticket.status];
+      const priorityClass = {
+       'high': 'bg-red-200 text-red-800',
+       'medium': 'bg-yellow-200 text-yellow-800',
+       'low': 'bg-green-200 text-green-800'
+      } [ticket.priority];
+      const assigneeName = users.find(u => u.name === ticket.assignee)?.name || 'Unassigned';
+      const isOverdue = ticket.dueDate && new Date(ticket.dueDate) < new Date() && ticket.status !== 'done';
+      const overdueClass = isOverdue ? 'border-2 border-red-500' : '';
+      const card = document.createElement('div');
+      card.className = `ticket-card bg-card p-6 rounded-xl shadow-md hover:shadow-xl transition-shadow ${overdueClass}`;
+      card.onclick = () => openTicketDetailsModal(ticket.id);
+      card.innerHTML = `
+                        
+												
+												<div class="flex items-center justify-between mb-2">
+													<span class="text-xs font-semibold uppercase ${statusClass} px-3 py-1 rounded-full">${ticket.status}</span>
+													<span class="text-xs text-gray-500 font-mono">#${ticket.id.substring(7, 12)}</span>
+												</div>
+												<h4 class="text-xl font-bold text-gray-800 mb-2">${getTypeIcon(ticket.type)} ${ticket.title}</h4>
+												<p class="text-sm text-gray-600 mb-4 truncate">${ticket.description || 'No description'}</p>
+												<div class="flex items-center justify-between text-sm text-gray-500">
+													<span>
+														<i class="fas fa-user-circle mr-1"></i>${assigneeName}
+													
+													</span>
+													<span>
+														<i class="fas fa-exclamation-circle mr-1"></i>
+														<span class="text-xs ${priorityClass} px-2 py-1 rounded-full">${ticket.priority}</span>
+													</span>
+												</div>
+												<div class="flex items-center justify-between text-xs mt-2 text-gray-500">
+													<span>
+														<i class="fas fa-calendar-check mr-1"></i>Due: ${formatDate(ticket.dueDate)}
+													
+													</span>
+													<span>
+														<i class="fas fa-stopwatch mr-1"></i>Logged: ${ticket.timeLogged || 0}h
+													
+													</span>
+												</div>
+												<div class="flex justify-end gap-2 mt-4">
+													<button class="text-gray-500 hover:text-green-700 transition-colors text-lg" onclick="event.stopPropagation(); openTimeLogModal('${ticket.id}')">
+														<i class="fas fa-stopwatch"></i>
+													</button>
+													<button class="text-blue-500 hover:text-blue-700 transition-colors text-lg" onclick="event.stopPropagation(); openTicketModal('${ticket.id}')">
+														<i class="fas fa-edit"></i>
+													</button>
+													<button class="text-red-500 hover:text-red-700 transition-colors text-lg" onclick="event.stopPropagation(); deleteTicket('${ticket.id}')">
+														<i class="fas fa-trash"></i>
+													</button>
+												</div>
+                    `;
+      ticketsList.appendChild(card);
+     });
+    }
+   }
+
+   function renderKanban() {
+    const columns = {
+     'todo': todoTicketsContainer,
+     'progress': progressTicketsContainer,
+     'review': reviewTicketsContainer,
+     'done': doneTicketsContainer
+    };
+    Object.values(columns).forEach(col => col.innerHTML = '');
+    const filteredTickets = filterTickets(tickets);
+    filteredTickets.forEach(ticket => {
+     const card = document.createElement('div');
+     card.id = `ticket-${ticket.id}`;
+     card.draggable = true;
+     card.className = `kanban-card`;
+     card.ondragstart = (event) => {
+      dragStart(event, ticket.id)
+     };
+     // Change: Call openTicketDetailsModal with a flag to hide buttons
+     card.onclick = () => openTicketDetailsModal(ticket.id, true);
+     const priorityClass = {
+      'high': 'bg-red-500',
+      'medium': 'bg-yellow-500',
+      'low': 'bg-green-500'
+     } [ticket.priority];
+     const assigneeName = users.find(u => u.name === ticket.assignee)?.name || 'Unassigned';
+     card.innerHTML = `
+                    
+												
+												<div class="flex items-center justify-between mb-2">
+													<div class="flex items-center gap-2">
+                            ${getTypeIcon(ticket.type)}
+                            
+														
+														<div class="text-xs font-semibold uppercase text-gray-600">${ticket.priority}</div>
+													</div>
+													<span class="text-xs text-gray-400 font-mono">#${ticket.id.substring(7, 12)}</span>
+												</div>
+												<h4 class="text-base font-bold text-gray-800 mb-2">${ticket.title}</h4>
+												<p class="text-xs text-gray-500 truncate mb-4">${ticket.description || 'No description'}</p>
+												<div class="flex items-center justify-between text-xs text-gray-500 mt-2">
+													<div class="flex items-center gap-1">
+														<i class="fas fa-user-circle"></i>
+														<span>${assigneeName}</span>
+													</div>
+													<div class="flex items-center gap-1">
+														<i class="fas fa-stopwatch"></i>
+														<span>${ticket.timeLogged || 0}h</span>
+													</div>
+												</div>
+												<div class="kanban-card-actions">
+													<button class="text-gray-500 hover:text-green-700 transition-colors text-xl" onclick="event.stopPropagation(); openTimeLogModal('${ticket.id}')">
+														<i class="fas fa-stopwatch"></i>
+													</button>
+													<button class="text-blue-500 hover:text-blue-700 transition-colors text-xl" onclick="event.stopPropagation(); openTicketModal('${ticket.id}')">
+														<i class="fas fa-edit"></i>
+													</button>
+													<button class="text-red-500 hover:text-red-700 transition-colors text-xl" onclick="event.stopPropagation(); deleteTicket('${ticket.id}')">
+														<i class="fas fa-trash"></i>
+													</button>
+												</div>
+                `;
+     columns[ticket.status].appendChild(card);
+    });
+    Object.keys(columns).forEach(status => {
+     const count = columns[status].children.length;
+     document.getElementById(`${status}-count`).textContent = count;
+     const emptyState = document.getElementById(`${status}-empty`);
+     if (count === 0) {
+      emptyState.classList.remove('hidden');
+     } else {
+      emptyState.classList.add('hidden');
+     }
+    });
+   }
+
+   function renderSprints() {
+    const sprintsList = document.getElementById('sprintsList');
+    sprintsList.innerHTML = '';
+    if (sprints.length === 0) {
+     sprintsEmptyState.classList.remove('hidden');
+    } else {
+     sprintsEmptyState.classList.add('hidden');
+     sprints.sort((a, b) => new Date(b.startDate) - new Date(a.startDate)).forEach(sprint => {
+      const totalTickets = tickets.filter(t => t.sprintId === sprint.id).length;
+      const completedTickets = tickets.filter(t => t.sprintId === sprint.id && t.status === 'done').length;
+      const progress = totalTickets > 0 ? (completedTickets / totalTickets) * 100 : 0;
+      const card = document.createElement('div');
+      card.className = `sprint-card bg-card p-6 rounded-xl shadow-md hover:shadow-xl transition-shadow`;
+      card.onclick = () => openSprintDetailsModal(sprint.id); // Fix: Make sprint cards clickable
+      card.innerHTML = `
+                        
+												
+												<div class="flex items-center justify-between mb-2">
+													<h4 class="text-xl font-bold text-gray-800">${sprint.name}</h4>
+													<span class="text-sm font-medium text-gray-500">${formatDate(sprint.startDate)} - ${formatDate(sprint.endDate)}</span>
+												</div>
+												<p class="text-sm text-gray-600 mb-4">${sprint.goal || 'No goal set'}</p>
+												<div class="w-full bg-gray-200 rounded-full h-2.5 mb-2">
+													<div class="bg-blue-600 h-2.5 rounded-full" style="width: ${progress}%"></div>
+												</div>
+												<div class="flex items-center justify-between text-xs text-gray-500">
+													<span>${totalTickets} tickets in sprint</span>
+													<span>${completedTickets} done</span>
+												</div>
+												<div class="flex justify-end gap-2 mt-4">
+													<button class="text-blue-500 hover:text-blue-700 transition-colors text-sm" onclick="event.stopPropagation(); openSprintModal('${sprint.id}')">
+														<i class="fas fa-edit"></i> Edit
+													
+													</button>
+													<button class="text-red-500 hover:text-red-700 transition-colors text-sm" onclick="event.stopPropagation(); deleteSprint('${sprint.id}')">
+														<i class="fas fa-trash"></i> Delete
+													
+													</button>
+												</div>
+                    `;
+      sprintsList.appendChild(card);
+     });
+    }
+   }
+
+   function renderUsers() {
+    const usersList = document.getElementById('usersList');
+    usersList.innerHTML = '';
+    if (users.length === 0) {
+     usersEmptyState.classList.remove('hidden');
+    } else {
+     usersEmptyState.classList.add('hidden');
+     users.forEach(user => {
+      const card = document.createElement('div');
+      card.className = `user-card bg-card p-6 rounded-xl shadow-md hover:shadow-xl transition-shadow flex items-center gap-4`;
+      card.onclick = () => openUserDetailsModal(user.id); // Fix: Make user cards clickable
+      card.innerHTML = `
+                        
+												
+												<div class="bg-gray-200 rounded-full w-12 h-12 flex items-center justify-center">
+													<i class="fas fa-user-circle text-2xl text-gray-500"></i>
+												</div>
+												<div class="flex-grow">
+													<h4 class="text-lg font-bold text-gray-800">${user.name}</h4>
+													<p class="text-sm text-gray-500">${user.email}</p>
+												</div>
+												<div class="flex gap-2">
+													<button class="text-blue-500 hover:text-blue-700 transition-colors text-lg" onclick="event.stopPropagation(); openUserModal('${user.id}')">
+														<i class="fas fa-edit"></i>
+													</button>
+													<button class="text-red-500 hover:text-red-700 transition-colors text-lg" onclick="event.stopPropagation(); deleteUser('${user.id}')">
+														<i class="fas fa-trash"></i>
+													</button>
+												</div>
+                    `;
+      usersList.appendChild(card);
+     });
+    }
+   }
+
+   function getTicketModalContent(ticket = {}) {
+    const isEdit = !!ticket.id;
+    const title = isEdit ? 'Edit Ticket' : 'Create New Ticket';
+    const buttonText = isEdit ? 'Save Changes' : 'Create Ticket';
+    const assigneeOptions = users.map(user => `
+												
+												<option value="${user.name}" ${ticket.assignee === user.name ? 'selected' : ''}>${user.name}</option>`).join('');
+    const typeOptions = ['story', 'bug', 'task', 'epic'].map(type => `
+												
+												<option value="${type}" ${ticket.type === type ? 'selected' : ''}>${type}</option>`).join('');
+    const priorityOptions = ['high', 'medium', 'low'].map(p => `
+												
+												<option value="${p}" ${ticket.priority === p ? 'selected' : ''}>${p}</option>`).join('');
+    const statusOptions = ['todo', 'progress', 'review', 'done'].map(s => `
+												
+												<option value="${s}" ${ticket.status === s ? 'selected' : ''}>${s}</option>`).join('');
+    const sprintOptions = sprints.map(s => `
+												
+												<option value="${s.id}" ${ticket.sprintId === s.id ? 'selected' : ''}>${s.name}</option>`).join('');
+    return `
+        
+												
+												<div class="modal-content w-full max-w-2xl">
+													<div class="flex justify-between items-center mb-6">
+														<h3 class="text-2xl font-bold text-gray-800">
+															<i class="fas fa-ticket-alt mr-2 text-indigo-500"></i>
+                    ${title}
+                
+														
+														</h3>
+														<button class="modal-close-btn p-1 transition-transform transform hover:rotate-90">
+															<i class="fas fa-times text-2xl"></i>
+														</button>
+													</div>
+													<form id="ticketForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+														<div class="md:col-span-2 flex flex-col space-y-1">
+															<label for="ticketTitle" class="text-sm font-medium text-gray-700 flex items-center">
+																<i class="text-gray-400"></i>
+                        Title *
+                    
+															
+															</label>
+															<input type="text" id="ticketTitle" name="title" class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow" required value="${ticket.title || ''}">
+															</div>
+															<div class="md:col-span-2 flex flex-col space-y-1">
+																<label for="ticketDescription" class="text-sm font-medium text-gray-700 flex items-center">
+																	<i class="fas fa-align-left mr-1 text-gray-400"></i>
+                        Description
+                    
+																
+																</label>
+																<textarea id="ticketDescription" name="description" class="w-full h-24 px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow resize-none">${ticket.description || ''}</textarea>
+															</div>
+															<div class="flex flex-col space-y-1">
+																<label for="ticketAssignee" class="text-sm font-medium text-gray-700 flex items-center">
+																	<i class="fas fa-user-circle mr-1 text-gray-400"></i>
+                        Assignee
+                    
+																
+																</label>
+																<select id="ticketAssignee" name="assignee" class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow">
+																	<required value="">Select Assignee</option>
+                        ${assigneeOptions}
+                    
+																
+																</select>
+															</div>
+															<div class="flex flex-col space-y-1">
+																<label for="ticketStatus" class="text-sm font-medium text-gray-700 flex items-center">
+																	<i class="fas fa-sync-alt mr-1 text-gray-400"></i>
+                        Status
+                    
+																
+																</label>
+																<select id="ticketStatus" name="status" class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow">
+                        ${statusOptions}
+                    </select>
+															</div>
+															<div class="flex flex-col space-y-1">
+																<label for="ticketPriority" class="text-sm font-medium text-gray-700 flex items-center">
+																	<i class="fas fa-exclamation-circle mr-1 text-gray-400"></i>
+                        Priority
+                    
+																
+																</label>
+																<select id="ticketPriority" name="priority" class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow">
+                        ${priorityOptions}
+                    </select>
+															</div>
+															<div class="flex flex-col space-y-1">
+																<label for="ticketDueDate" class="text-sm font-medium text-gray-700 flex items-center">
+																	<i class="fas fa-calendar-alt mr-1 text-gray-400"></i>
+                        Due Date
+                    
+																
+																</label>
+																<input type="date" id="ticketDueDate" name="dueDate" class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow" value="${ticket.dueDate || ''}">
+																</div>
+																<div class="flex flex-col space-y-1">
+																	<label for="ticketType" class="text-sm font-medium text-gray-700 flex items-center">
+																		<i class="fas fa-folder-open mr-1 text-gray-400"></i>
+                        Type
+                    
+																	
+																	</label>
+																	<select id="ticketType" name="type" class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow">
+                        ${typeOptions}
+                    </select>
+																</div>
+																<div class="flex flex-col space-y-1">
+																	<label for="ticketSprint" class="text-sm font-medium text-gray-700 flex items-center">
+																		<i class="fas fa-bolt mr-1 text-gray-400"></i>
+                        Sprint
+                    
+																	
+																	</label>
+																	<select id="ticketSprint" name="sprintId" class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow">
+																		<option value="">No Sprint</option>
+                        ${sprintOptions}
+                    
+																	
+																	</select>
+																</div>
+																<div class="md:col-span-2 flex justify-end gap-3 mt-4">
+																	<button type="button" class="px-6 py-2 rounded-lg font-semibold shadow-md transition-all hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-gray-400 bg-gray-200 text-gray-800 hover:bg-gray-300" onclick="closeModal()">
+                        Cancel
+                    </button>
+																	<button type="submit" class="px-6 py-2 rounded-lg font-semibold shadow-md transition-all hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gradient-to-r from-purple-500 to-indigo-600 text-white">
+                        ${buttonText}
+                    </button>
+																</div>
+															</form>
+														</div>
+    `;
+   }
+
+   function getSprintModalContent(sprint = {}) {
+    const isEdit = !!sprint.id;
+    const title = isEdit ? 'Edit Sprint' : 'Create New Sprint';
+    const buttonText = isEdit ? 'Save Changes' : 'Create Sprint';
+    return `
+        
+														
+														<div class="modal-content w-full max-w-2xl">
+															<div class="flex justify-between items-center mb-6">
+																<h3 class="text-2xl font-bold text-gray-800">
+																	<i class="fas fa-bolt text-4xl text-orange-500 mb-2"></i>
+                    ${title}
+                
+																
+																</h3>
+																<button class="modal-close-btn p-1 transition-transform transform hover:rotate-90">
+																	<i class="fas fa-times text-2xl"></i>
+																</button>
+															</div>
+															<form id="sprintForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+																<div class="md:col-span-2 flex flex-col space-y-1">
+																	<label for="sprint-name" class="text-sm font-medium text-gray-700 flex items-center">
+																		<i class="text-gray-400"></i>
+                        Sprint Name *
+                    
+																	
+																	</label>
+																	<input type="text" id="sprint-name" name="name" 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none 
+                               focus:ring-2 focus:ring-indigo-500 transition-shadow"
+                        value="${sprint.name || ''}" required>
+																	</div>
+																	<div class="md:col-span-2 flex flex-col space-y-1">
+																		<label for="sprint-goal" class="text-sm font-medium text-gray-700 flex items-center">
+																			<i class="fas fa-bullseye mr-1 text-gray-400"></i>
+                        Goal
+                    
+																		
+																		</label>
+																		<textarea id="sprint-goal" name="goal"
+                        class="w-full h-24 px-4 py-2 border border-gray-300 rounded-lg shadow-sm 
+                               focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow resize-none"
+                    >${sprint.goal || ''}</textarea>
+																	</div>
+																	<div class="flex flex-col space-y-1">
+																		<label for="sprint-start-date" class="text-sm font-medium text-gray-700 flex items-center">
+																			<i class="fas fa-calendar-plus mr-1 text-gray-400"></i>
+                        Start Date *
+                    
+																		
+																		</label>
+																		<input type="date" id="sprint-start-date" name="startDate"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none 
+                               focus:ring-2 focus:ring-indigo-500 transition-shadow"
+                        value="${sprint.startDate || ''}" required>
+																		</div>
+																		<div class="flex flex-col space-y-1">
+																			<label for="sprint-end-date" class="text-sm font-medium text-gray-700 flex items-center">
+																				<i class="fas fa-calendar-check mr-1 text-gray-400"></i>
+                        End Date *
+                    
+																			
+																			</label>
+																			<input type="date" id="sprint-end-date" name="endDate"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none 
+                               focus:ring-2 focus:ring-indigo-500 transition-shadow"
+                        value="${sprint.endDate || ''}" required>
+																			</div>
+																			<div class="md:col-span-2 flex justify-end gap-3 mt-4">
+																				<button type="button" 
+                        class="px-6 py-2 rounded-lg font-semibold shadow-md transition-all hover:shadow-lg 
+                               focus:outline-none focus:ring-2 focus:ring-gray-400 bg-gray-200 text-gray-800 hover:bg-gray-300"
+                        onclick="closeModal()">
+                        Cancel
+                    </button>
+																				<button type="submit" 
+                        class="px-6 py-2 rounded-lg font-semibold shadow-md transition-all hover:shadow-lg 
+                               focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gradient-to-r from-purple-500 to-indigo-600 text-white">
+                        ${buttonText}
+                    </button>
+																			</div>
+																		</form>
+																	</div>
+    `;
+   }
+
+   function getUserModalContent(user = {}) {
+    const isEdit = !!user.id;
+    const title = isEdit ? 'Edit User' : 'Add New User';
+    const buttonText = isEdit ? 'Save Changes' : 'Add User';
+    return `
+        
+																	
+																	<div class="modal-content w-full max-w-2xl">
+																		<div class="flex justify-between items-center mb-6">
+																			<h3 class="text-2xl font-bold text-gray-800">
+																				<i class="fas fa-user mr-2 text-indigo-500"></i>
+                    ${title}
+                
+																			
+																			</h3>
+																			<button class="modal-close-btn p-1 transition-transform transform hover:rotate-90">
+																				<i class="fas fa-times text-2xl"></i>
+																			</button>
+																		</div>
+																		<form id="userForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+																			<div class="md:col-span-2 flex flex-col space-y-1">
+																				<label for="user-name" class="text-sm font-medium text-gray-700 flex items-center">
+																					<i class="fas fa-id-card mr-1 text-gray-400"></i>
+                        Full Name *
+                    
+																				
+																				</label>
+																				<input type="text" id="user-name" name="name" 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none 
+                               focus:ring-2 focus:ring-indigo-500 transition-shadow"
+                        value="${user.name || ''}" required>
+																				</div>
+																				<div class="md:col-span-2 flex flex-col space-y-1">
+																					<label for="user-email" class="text-sm font-medium text-gray-700 flex items-center">
+																						<i class="fas fa-envelope mr-1 text-gray-400"></i>
+                        Email *
+                    
+																					
+																					</label>
+																					<input type="email" id="user-email" name="email" 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none 
+                               focus:ring-2 focus:ring-indigo-500 transition-shadow"
+                        value="${user.email || ''}" required>
+																					</div>
+																					<div class="md:col-span-2 flex justify-end gap-3 mt-4">
+																						<button type="button" 
+                        class="px-6 py-2 rounded-lg font-semibold shadow-md transition-all hover:shadow-lg 
+                               focus:outline-none focus:ring-2 focus:ring-gray-400 bg-gray-200 text-gray-800 hover:bg-gray-300"
+                        onclick="closeModal()">
+                        Cancel
+                    </button>
+																						<button type="submit" 
+                        class="px-6 py-2 rounded-lg font-semibold shadow-md transition-all hover:shadow-lg 
+                               focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gradient-to-r from-purple-500 to-indigo-600 text-white">
+                        ${buttonText}
+                    </button>
+																					</div>
+																				</form>
+																			</div>
+    `;
+   }
+
+   function getLogHoursModalContent() {
+    return `
+        
+																			
+																			<div class="modal-content w-full max-w-2xl">
+																				<div class="flex justify-between items-center mb-6">
+																					<h3 class="text-2xl font-bold text-gray-800">
+																						<i class="fas fa-stopwatch mr-2 text-indigo-500"></i>
+                    Log Hours
+                
+																					
+																					</h3>
+																					<button class="modal-close-btn p-1 transition-transform transform hover:rotate-90">
+																						<i class="fas fa-times text-2xl"></i>
+																					</button>
+																				</div>
+																				<form id="logHoursForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+																					<div class="md:col-span-2 flex flex-col space-y-1">
+																						<label for="hours-logged" class="text-sm font-medium text-gray-700 flex items-center">
+																							<i class="fas fa-hourglass-half mr-1 text-gray-400"></i>
+                        Hours to Log *
+                    
+																						
+																						</label>
+																						<input type="number" id="hours-logged" name="hours" min="0.5" step="0.5" required
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none 
+                               focus:ring-2 focus:ring-indigo-500 transition-shadow">
+																						</div>
+																						<div class="md:col-span-2 flex flex-col space-y-1">
+																							<label for="log-comment" class="text-sm font-medium text-gray-700 flex items-center">
+																								<i class="fas fa-align-left mr-1 text-gray-400"></i>
+                        Comment (Optional)
+                    
+																							
+																							</label>
+																							<textarea id="log-comment" name="comment"
+                        class="w-full h-24 px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none 
+                               focus:ring-2 focus:ring-indigo-500 transition-shadow resize-none"></textarea>
+																						</div>
+																						<div class="md:col-span-2 flex justify-end gap-3 mt-4">
+																							<button type="button" 
+                        class="px-6 py-2 rounded-lg font-semibold shadow-md transition-all hover:shadow-lg 
+                               focus:outline-none focus:ring-2 focus:ring-gray-400 bg-gray-200 text-gray-800 hover:bg-gray-300"
+                        onclick="closeModal()">
+                        Cancel
+                    </button>
+																							<button type="submit" 
+                        class="px-6 py-2 rounded-lg font-semibold shadow-md transition-all hover:shadow-lg 
+                               focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gradient-to-r from-purple-500 to-indigo-600 text-white">
+                        Log Hours
+                    </button>
+																						</div>
+																					</form>
+																				</div>
+    `;
+   }
+
+   function openTicketModal(ticketId = null) {
+    ticketToEdit = tickets.find(t => t.id === ticketId);
+    openModal(getTicketModalContent(ticketToEdit), saveTicket);
+   }
+
+   function openSprintModal(sprintId = null) {
+    sprintToEdit = sprints.find(s => s.id === sprintId);
+    openModal(getSprintModalContent(sprintToEdit), saveSprint);
+   }
+
+   function openUserModal(userId = null) {
+    userToEdit = users.find(u => u.id === userId);
+    openModal(getUserModalContent(userToEdit), saveUser);
+   }
+  
+// Open Logged Hours Model
+  
+// New: Function to open log hours modal
+function openTimeLogModal(ticketId) {
+  timeLogTicketId = ticketId;
+  const ticket = tickets.find(t => t.id === ticketId);
+  if (!ticket) {
+    showToast("Ticket not found.", "error");
+    return;
+  }
+
+  const existingLogs = ticket.timeLogs || [];
+
+  // Build logs list HTML
+  const logsHtml = existingLogs.length > 0
+    ? existingLogs.map(log => `
+        <div class="p-2 border-b last:border-0">
+          <p class="text-sm"><strong>${log.hours}h</strong> - ${log.comment || 'No comment'}</p>
+          <p class="text-xs text-gray-500">${new Date(log.timestamp).toLocaleString()}</p>
+        </div>
+      `).join('')
+    : `<p class="text-center text-gray-500 py-2">No hours logged yet.</p>`;
+
+  // Modal content
+  const modalContent = `
+    <div class="modal-content">
+      <div class="flex justify-between items-start pb-4 border-b">
+        <h3 class="text-xl font-bold">Log Hours</h3>
+        <button class="modal-close-btn"><i class="fas fa-times"></i></button>
+      </div>
+
+      <div class="mt-4">
+        <h4 class="font-semibold mb-2">Existing Logs:</h4>
+        <div class="max-h-40 overflow-y-auto border rounded-lg bg-gray-50">
+          ${logsHtml}
+        </div>
+      </div>
+
+      <form id="time-log-form" class="mt-4 space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-1">Hours *</label>
+          <input type="number" id="hours-logged" class="w-full border rounded px-3 py-2" min="0" step="0.1" required>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Comment</label>
+          <textarea id="log-comment" class="w-full border rounded px-3 py-2" rows="2"></textarea>
+        </div>
+        <div class="flex justify-end">
+          <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Save</button>
+        </div>
+      </form>
+    </div>
+  `;
+
+  openModal(modalContent, saveTimeLog);
+}
+
+   // Open Ticket Model
+   
+function openTicketDetailsModal(ticketId, hideButtons = false) {
+  const ticket = tickets.find(t => t.id === ticketId);
+  if (!ticket) return;
+
+  const assigneeName = users.find(u => u.name === ticket.assignee)?.name || 'Unassigned';
+  const sprintName = sprints.find(s => s.id === ticket.sprintId)?.name || 'No Sprint';
+
+  const statusBg = {
+    'todo': 'bg-yellow-200',
+    'progress': 'bg-blue-200',
+    'review': 'bg-red-200',
+    'done': 'bg-green-200'
+  }[ticket.status] || 'bg-gray-200';
+
+  const priorityBg = {
+    'high': 'bg-red-200',
+    'medium': 'bg-yellow-200',
+    'low': 'bg-green-200'
+  }[ticket.priority] || 'bg-gray-200';
+
+  const modalContent = `
+    <div class="modal-content">
+      <div class="flex justify-between items-start pb-4 border-b">
+        <div>
+          <h3 class="text-2xl font-bold text-gray-800 mb-2">${getTypeIcon(ticket.type)} ${ticket.title}</h3>
+          <div class="flex items-center gap-2 text-sm text-gray-600">
+            <span class="px-2 py-1 rounded-full text-xs font-semibold ${statusBg} text-gray-800">${ticket.status}</span>
+            <span class="px-2 py-1 rounded-full text-xs font-semibold ${priorityBg} text-gray-800">${ticket.priority}</span>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <button id="export-ticket-csv" class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm">Export CSV</button>
+          <button id="export-ticket-pdf" class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-sm">Export PDF</button>
+          <button class="modal-close-btn"><i class="fas fa-times"></i></button>
+        </div>
+      </div>
+
+      <div class="mt-6 text-gray-700">
+        <!-- Scrollable description -->
+        <div class="mb-4 max-h-40 overflow-y-auto border rounded p-2 bg-gray-50">
+          ${ticket.description || 'No description provided.'}
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm font-medium">
+          <div><strong>Assignee:</strong> ${assigneeName}</div>
+          <div><strong>Sprint:</strong> ${sprintName}</div>
+          <div><strong>Due Date:</strong> ${formatDate(ticket.dueDate)}</div>
+          <div><strong>Time Logged:</strong> ${ticket.timeLogged || 0}h</div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  openModal(modalContent, (e) => e.preventDefault());
+
+
+  // --- EXPORT HANDLERS ---
+  setTimeout(() => {
+    document.getElementById('export-ticket-csv').addEventListener('click', () => {
+      exportTicketCSV(ticket, assigneeName, sprintName);
+    });
+    document.getElementById('export-ticket-pdf').addEventListener('click', () => {
+      exportTicketPDF(ticket, assigneeName, sprintName);
+    });
+  }, 100);
+}
+
+// Export Ticket CSV
+function exportTicketCSV(ticket, assignee, sprintName) {
+  const header = ["ID", "Title", "Description", "Status", "Priority", "Assignee", "Sprint", "Due Date", "Logged Hours"];
+  const row = [
+    ticket.id,
+    `"${ticket.title}"`,
+    `"${ticket.description || "N/A"}"`,
+    ticket.status,
+    ticket.priority || "N/A",
+    assignee,
+    sprintName,
+    ticket.dueDate || "N/A",
+    ticket.timeLogged || 0
+  ];
+
+  const csv = [header.join(","), row.join(",")].join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `ticket_${ticket.id}.csv`;
+  a.click();
+
+  URL.revokeObjectURL(url);
+}
+
+// Export Ticket PDF
+function exportTicketPDF(ticket, assignee, sprintName) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  doc.setFontSize(16);
+  doc.text(`Ticket: ${ticket.title}`, 10, 15);
+
+  doc.setFontSize(12);
+  doc.text(`ID: ${ticket.id}`, 10, 25);
+  doc.text(`Status: ${ticket.status}`, 10, 35);
+  doc.text(`Priority: ${ticket.priority || "N/A"}`, 10, 45);
+  doc.text(`Assignee: ${assignee}`, 10, 55);
+  doc.text(`Sprint: ${sprintName}`, 10, 65);
+  doc.text(`Due Date: ${formatDate(ticket.dueDate)}`, 10, 75);
+  doc.text(`Time Logged: ${ticket.timeLogged || 0}h`, 10, 85);
+
+  // Wrap description
+  const description = ticket.description || "No description provided.";
+  const wrappedDesc = doc.splitTextToSize(`Description: ${description}`, 180);
+  doc.text(wrappedDesc, 10, 100);
+
+  doc.save(`ticket_${ticket.id}.pdf`);
+}
+
+   
+   
+// Open Sprint Modal
+
+function openSprintDetailsModal(sprintId) {
+  const sprint = sprints.find(s => s.id === sprintId);
+  if (!sprint) return;
+
+  const ticketsInSprint = tickets.filter(t => t.sprintId === sprint.id);
+
+  // Normalize statuses
+  const normalizeStatus = (s) => {
+    if (!s) return 'unknown';
+    const k = String(s).trim().toLowerCase();
+    if (['done','completed','complete','closed'].includes(k)) return 'done';
+    if (['in progress','in-progress','progress','doing','wip'].includes(k)) return 'inprogress';
+    if (['review','in review','in-review','code review','qa'].includes(k)) return 'review';
+    if (['todo','to do','backlog','open'].includes(k)) return 'todo';
+    return k;
+  };
+
+  // Count tickets by normalized status
+  const statusCounts = ticketsInSprint.reduce((acc, t) => {
+    const key = normalizeStatus(t.status);
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+
+  // Priority counts
+  const priorityCounts = ticketsInSprint.reduce((acc, t) => {
+    const p = (t.priority || '').toLowerCase();
+    acc[p] = (acc[p] || 0) + 1;
+    return acc;
+  }, {});
+
+  // Fixed priorities (High/Medium/Low only)
+  const fixedPriorities = [
+    { key: "high", label: "High", color: "bg-red-100" },
+    { key: "medium", label: "Medium", color: "bg-yellow-100" },
+    { key: "low", label: "Low", color: "bg-blue-100" }
+  ];
+
+  // Total time logged
+  const totalTimeLogged = ticketsInSprint.reduce((sum, t) => sum + (t.timeLogged || 0), 0);
+
+  // Ticket list with details
+  const ticketListHtml = ticketsInSprint.length > 0
+    ? ticketsInSprint.map(ticket => {
+        const assignee = users.find(u => u.name === ticket.assignee);
+        return `
+          <div class="p-2 border-b last:border-b-0 hover:bg-gray-50">
+            <div class="flex justify-between items-center">
+              <span class="font-medium">${ticket.title || ticket.id}</span>
+              <span class="text-sm text-gray-500">${ticket.status}</span>
+            </div>
+            <div class="text-xs text-gray-600 mt-1">
+              <span><strong>Assignee:</strong> ${assignee ? assignee.name : 'Unassigned'}</span> |
+              <span><strong>Due:</strong> ${ticket.dueDate ? formatDate(ticket.dueDate) : 'N/A'}</span> |
+              <span><strong>Logged:</strong> ${ticket.timeLogged || 0}h</span>
+            </div>
+          </div>
+        `;
+      }).join('')
+    : `<p class="text-center text-gray-500 py-4">No tickets in this sprint.</p>`;
+
+  // Status summary
+  const summaryHtml = `
+    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 my-4 text-center">
+      <div class="p-3 rounded bg-green-100">
+        <span class="block text-lg font-bold">${statusCounts.done || 0}</span>
+        <span class="text-sm text-gray-600">Completed</span>
+      </div>
+      <div class="p-3 rounded bg-yellow-100">
+        <span class="block text-lg font-bold">${statusCounts.inprogress || 0}</span>
+        <span class="text-sm text-gray-600">In Progress</span>
+      </div>
+      <div class="p-3 rounded bg-purple-100">
+        <span class="block text-lg font-bold">${statusCounts.review || 0}</span>
+        <span class="text-sm text-gray-600">In Review</span>
+      </div>
+      <div class="p-3 rounded bg-blue-100">
+        <span class="block text-lg font-bold">${statusCounts.todo || 0}</span>
+        <span class="text-sm text-gray-600">To Do</span>
+      </div>
+    </div>
+  `;
+
+  // Priority summary (always show High/Medium/Low)
+  const priorityHtml = `
+    <div class="grid grid-cols-3 gap-2 my-4 text-center">
+      ${fixedPriorities.map(p => `
+        <div class="p-2 rounded ${p.color}">
+          <span class="block text-lg font-bold">${priorityCounts[p.key] || 0}</span>
+          <span class="text-sm text-gray-600">${p.label}</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+  // Modal content with export buttons
+const modalContent = `
+  <div class="modal-content">
+    <div class="flex justify-between items-start pb-4 border-b">
+      <div>
+        <h3 class="text-2xl font-bold text-gray-800 mb-1">${sprint.name}</h3>
+        <p class="text-sm text-gray-600">${formatDate(sprint.startDate)} - ${formatDate(sprint.endDate)}</p>
+      </div>
+      <div class="flex gap-2">
+        <button id="export-csv" class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm">Export CSV</button>
+        <button id="export-pdf" class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-sm">Export PDF</button>
+        <button class="modal-close-btn"><i class="fas fa-times"></i></button>
+      </div>
+    </div>
+    <div class="mt-6 text-gray-700">
+<h4 class="font-bold mb-2">Goal:</h4>
+<div class="goal-box mb-4">
+  ${sprint.goal || 'No goal set.'}
+</div>
+
+
+      <h4 class="font-bold mb-2">Total Time Logged:</h4>
+      <p class="mb-4">${totalTimeLogged}h</p>
+
+      <h4 class="font-bold mb-2">Tickets in Sprint (${ticketsInSprint.length}):</h4>
+      ${summaryHtml}
+
+      <h4 class="font-bold mb-2">Priority Distribution:</h4>
+      ${priorityHtml}
+
+      <div class="max-h-60 overflow-y-auto border rounded-lg">
+        ${ticketListHtml}
+      </div>
+    </div>
+  </div>
+`;
+
+
+  openModal(modalContent, (e) => e.preventDefault());
+
+  // --- EXPORT HANDLERS ---
+  setTimeout(() => {
+    document.getElementById('export-csv').addEventListener('click', () => {
+      exportSprintCSV(sprint, ticketsInSprint);
+    });
+    document.getElementById('export-pdf').addEventListener('click', () => {
+      exportSprintPDF(sprint, ticketsInSprint, totalTimeLogged, priorityCounts, statusCounts);
+    });
+  }, 100);
+}
+
+// Export CSV
+function exportSprintCSV(sprint, tickets) {
+  const header = ["ID", "Title", "Status", "Priority", "Assignee", "Due Date", "Logged Hours"];
+  const rows = tickets.map(t => [
+    t.id,
+    `"${t.title}"`,
+    t.status,
+    t.priority || "N/A",
+    t.assignee || "Unassigned",
+    t.dueDate || "N/A",
+    t.timeLogged || 0
+  ]);
+
+  const csv = [header, ...rows].map(r => r.join(",")).join("\n");
+
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${sprint.name.replace(/\s+/g, "_")}.csv`;
+  a.click();
+
+  URL.revokeObjectURL(url);
+}
+
+// Export PDF
+function exportSprintPDF(sprint, tickets, totalTime, priorityCounts, statusCounts) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  doc.setFontSize(16);
+  doc.text(`Sprint: ${sprint.name}`, 10, 15);
+
+  doc.setFontSize(12);
+  doc.text(`Duration: ${formatDate(sprint.startDate)} - ${formatDate(sprint.endDate)}`, 10, 25);
+
+  // Wrap long goal text
+  const goal = sprint.goal || "No goal set";
+  const wrappedGoal = doc.splitTextToSize(`Goal: ${goal}`, 180); // wrap within 180px
+  doc.text(wrappedGoal, 10, 35);
+  let currentY = 35 + wrappedGoal.length * 7; // move down depending on wrapped lines
+
+  doc.text(`Total Time Logged: ${totalTime}h`, 10, currentY);
+  currentY += 15;
+
+  // Status counts
+  doc.text("Status Summary:", 10, currentY);
+  currentY += 10;
+  doc.text(`Completed: ${statusCounts.done || 0}`, 20, currentY);
+  currentY += 10;
+  doc.text(`In Progress: ${statusCounts.inprogress || 0}`, 20, currentY);
+  currentY += 10;
+  doc.text(`In Review: ${statusCounts.review || 0}`, 20, currentY);
+  currentY += 10;
+  doc.text(`To Do: ${statusCounts.todo || 0}`, 20, currentY);
+  currentY += 15;
+
+  // Priority counts
+  doc.text("Priority Distribution:", 10, currentY);
+  currentY += 10;
+  doc.text(`High: ${priorityCounts.high || 0}`, 20, currentY);
+  currentY += 10;
+  doc.text(`Medium: ${priorityCounts.medium || 0}`, 20, currentY);
+  currentY += 10;
+  doc.text(`Low: ${priorityCounts.low || 0}`, 20, currentY);
+  currentY += 15;
+
+  // Ticket list
+  doc.text("Tickets:", 10, currentY);
+  currentY += 10;
+  tickets.forEach((t, i) => {
+    const assignee = t.assignee || "Unassigned";
+    const logged = `${t.timeLogged || 0}h`;
+    const due = t.dueDate ? formatDate(t.dueDate) : "N/A";
+    const line = `${i + 1}. ${t.title} [${t.status}] | ${assignee} | (${logged}) | Due: ${due}`;
+
+    const wrappedLine = doc.splitTextToSize(line, 180);
+    doc.text(wrappedLine, 10, currentY);
+
+    currentY += wrappedLine.length * 7;
+    if (currentY > 270) {
+      doc.addPage();
+      currentY = 20;
+    }
+  });
+
+  doc.save(`${sprint.name.replace(/\s+/g, "_")}.pdf`);
+}
+
+
+
+// Open User Modal
+
+function openUserDetailsModal(userId) {
+  const user = users.find(u => u.id === userId);
+  if (!user) return;
+
+  const userTickets = tickets.filter(t => t.assignee === user.name);
+
+  const normalizeStatus = (s) => {
+    if (!s) return 'unknown';
+    const k = String(s).trim().toLowerCase();
+    if (['done','completed','complete','closed'].includes(k)) return 'done';
+    if (['in progress','in-progress','progress','doing','wip'].includes(k)) return 'inprogress';
+    if (['review','in review','in-review','code review','qa'].includes(k)) return 'review';
+    if (['todo','to do','backlog','open'].includes(k)) return 'todo';
+    return k;
+  };
+
+  const normalizePriority = (p) => {
+    if (!p) return 'unspecified';
+    const k = String(p).trim().toLowerCase();
+    if (['high','p1','urgent'].includes(k)) return 'high';
+    if (['medium','p2','normal'].includes(k)) return 'medium';
+    if (['low','p3','minor'].includes(k)) return 'low';
+    return 'unspecified';
+  };
+
+  // Count by status
+  const statusCounts = userTickets.reduce((acc, t) => {
+    const key = normalizeStatus(t.status);
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+
+  // Count by priority
+  const priorityCounts = userTickets.reduce((acc, t) => {
+    const key = normalizePriority(t.priority);
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+
+  function renderTickets(filteredTickets) {
+    return filteredTickets.length > 0
+      ? filteredTickets.map(ticket => {
+          const dueDate = ticket.dueDate ? formatDate(ticket.dueDate) : "N/A";
+          return `
+            <div class="flex justify-between items-center p-2 border-b last:border-b-0 hover:bg-gray-50">
+              <span class="font-medium">${ticket.title || ticket.id}</span>
+              <span class="text-sm text-gray-500">
+                ${ticket.status} | ${ticket.timeLogged || 0}h | Due: ${dueDate}
+              </span>
+            </div>
+          `;
+        }).join('')
+      : `<p class="text-center text-gray-500 py-4">No tickets match filter.</p>`;
+  }
+
+  const summaryHtml = `
+    <h4 class="font-bold mb-2">Status Distribution</h4>
+    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 my-4 text-center">
+      <div class="p-3 rounded bg-green-100">
+        <span class="block text-lg font-bold">${statusCounts.done || 0}</span>
+        <span class="text-sm text-gray-600">Completed</span>
+      </div>
+      <div class="p-3 rounded bg-yellow-100">
+        <span class="block text-lg font-bold">${statusCounts.inprogress || 0}</span>
+        <span class="text-sm text-gray-600">In Progress</span>
+      </div>
+      <div class="p-3 rounded bg-purple-100">
+        <span class="block text-lg font-bold">${statusCounts.review || 0}</span>
+        <span class="text-sm text-gray-600">In Review</span>
+      </div>
+      <div class="p-3 rounded bg-blue-100">
+        <span class="block text-lg font-bold">${statusCounts.todo || 0}</span>
+        <span class="text-sm text-gray-600">To Do</span>
+      </div>
+    </div>
+
+    <h4 class="font-bold mb-2">Priority Distribution</h4>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 my-4 text-center">
+      <div class="p-3 rounded bg-red-100">
+        <span class="block text-lg font-bold">${priorityCounts.high || 0}</span>
+        <span class="text-sm text-gray-600">High</span>
+      </div>
+      <div class="p-3 rounded bg-yellow-200">
+        <span class="block text-lg font-bold">${priorityCounts.medium || 0}</span>
+        <span class="text-sm text-gray-600">Medium</span>
+      </div>
+      <div class="p-3 rounded bg-green-100">
+        <span class="block text-lg font-bold">${priorityCounts.low || 0}</span>
+        <span class="text-sm text-gray-600">Low</span>
+      </div>
+    </div>
+  `;
+
+  const modalContent = `
+    <div class="modal-content">
+      <div class="flex justify-between items-start pb-4 border-b">
+        <div>
+          <h3 class="text-2xl font-bold text-gray-800 mb-1">${user.name}</h3>
+          <p class="text-sm text-gray-600">${user.email}</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="exportUserPdfBtn" class="px-3 py-1 bg-red-500 text-white rounded">Export PDF</button>
+          <button id="exportUserCsvBtn" class="px-3 py-1 bg-green-500 text-white rounded">Export CSV</button>
+          <button class="modal-close-btn"><i class="fas fa-times"></i></button>
+        </div>
+      </div>
+      <div class="mt-6 text-gray-700">
+        <h4 class="font-bold mb-2">Assigned Tickets (${userTickets.length}):</h4>
+        ${summaryHtml}
+        
+        <div class="flex gap-4 my-3 text-sm">
+          <label><input type="checkbox" class="status-filter" value="done" checked> Completed</label>
+          <label><input type="checkbox" class="status-filter" value="inprogress" checked> In Progress</label>
+          <label><input type="checkbox" class="status-filter" value="review" checked> In Review</label>
+          <label><input type="checkbox" class="status-filter" value="todo" checked> To Do</label>
+        </div>
+
+        <div id="userTicketList" class="max-h-60 overflow-y-auto border rounded-lg">
+          ${renderTickets(userTickets)}
+        </div>
+      </div>
+    </div>
+  `;
+
+  openModal(modalContent, (e) => e.preventDefault());
+
+  const checkboxes = document.querySelectorAll('.status-filter');
+  checkboxes.forEach(cb => {
+    cb.addEventListener('change', () => {
+      const selected = Array.from(checkboxes).filter(c => c.checked).map(c => c.value);
+      const filteredTickets = userTickets.filter(t => selected.includes(normalizeStatus(t.status)));
+      document.getElementById('userTicketList').innerHTML = renderTickets(filteredTickets);
+    });
+  });
+
+  // Export PDF
+  document.getElementById("exportUserPdfBtn").addEventListener("click", () => {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    doc.setFontSize(16);
+    doc.text(`User: ${user.name}`, 10, 10);
+    doc.setFontSize(12);
+    doc.text(`Email: ${user.email}`, 10, 20);
+    doc.text(`Total Tickets: ${userTickets.length}`, 10, 30);
+
+    doc.text("Status Summary:", 10, 45);
+    doc.text(`Completed: ${statusCounts.done || 0}`, 20, 55);
+    doc.text(`In Progress: ${statusCounts.inprogress || 0}`, 20, 65);
+    doc.text(`In Review: ${statusCounts.review || 0}`, 20, 75);
+    doc.text(`To Do: ${statusCounts.todo || 0}`, 20, 85);
+
+    doc.text("Priority Distribution:", 10, 100);
+    doc.text(`High: ${priorityCounts.high || 0}`, 20, 110);
+    doc.text(`Medium: ${priorityCounts.medium || 0}`, 20, 120);
+    doc.text(`Low: ${priorityCounts.low || 0}`, 20, 130);
+
+    doc.text("Tickets:", 10, 150);
+    let y = 160;
+    userTickets.forEach((t, i) => {
+      const dueDate = t.dueDate ? formatDate(t.dueDate) : "N/A";
+      const line = `${i + 1}. ${t.title || t.id} [${t.status}] | (${t.timeLogged || 0}h) | Due: ${dueDate}`;
+      doc.text(line, 10, y);
+      y += 10;
+      if (y > 270) { doc.addPage(); y = 20; }
+    });
+
+    doc.save(`${user.name}_details.pdf`);
+  });
+
+// Export CSV
+document.getElementById("exportUserCsvBtn").addEventListener("click", () => {
+  let csv = "Title,Status,Logged Hours,Due Date,Priority\n";
+  userTickets.forEach(t => {
+    const dueDate = t.dueDate ? formatDate(t.dueDate) : "N/A";
+    // Wrap dueDate in quotes to avoid splitting on commas
+    csv += `"${t.title || t.id}",${t.status},${t.timeLogged || 0},"${dueDate}",${t.priority || "N/A"}\n`;
+  });
+
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `${user.name}_details.csv`;
+  link.click();
+});
+
+}
+
+
+
+
+
+
+   async function saveTicket(event) {
+    event.preventDefault();
+    const title = document.getElementById('ticketTitle').value.trim();
+    const description = document.getElementById('ticketDescription').value.trim();
+    const type = document.getElementById('ticketType').value;
+    const priority = document.getElementById('ticketPriority').value;
+    const status = document.getElementById('ticketStatus').value;
+    let assignee = document.getElementById('ticketAssignee').value;
+    const sprintId = document.getElementById('ticketSprint').value;
+    const dueDate = document.getElementById('ticketDueDate').value;
+    if (assignee === "") assignee = null;
+    const ticketData = {
+     title,
+     description,
+     type,
+     priority,
+     status,
+     assignee,
+     sprintId,
+     dueDate,
+     timeLogged: ticketToEdit ? (ticketToEdit.timeLogged || 0) : 0
+    };
+    const docId = ticketToEdit ? ticketToEdit.id : db.collection('users').doc(currentUserId).collection('tickets').doc().id;
+    const success = await saveToFirebase('tickets', docId, ticketData);
+    if (success) {
+     showToast(`Ticket '${title}' saved successfully!`);
+     closeModal();
+    }
+   }
+   async function saveSprint(event) {
+    event.preventDefault();
+    const name = document.getElementById('sprint-name').value.trim();
+    const goal = document.getElementById('sprint-goal').value.trim();
+    const startDate = document.getElementById('sprint-start-date').value;
+    const endDate = document.getElementById('sprint-end-date').value;
+    const sprintData = {
+     name,
+     goal,
+     startDate,
+     endDate,
+     createdAt: sprintToEdit ? sprintToEdit.createdAt : new Date().toISOString()
+    };
+    const docId = sprintToEdit ? sprintToEdit.id : db.collection('users').doc(currentUserId).collection('sprints').doc().id;
+    const success = await saveToFirebase('sprints', docId, sprintData);
+    if (success) {
+     showToast(`Sprint '${name}' saved successfully!`);
+     closeModal();
+    }
+   }
+   async function saveUser(event) {
+    event.preventDefault();
+    const name = document.getElementById('user-name').value.trim();
+    const email = document.getElementById('user-email').value.trim();
+    const userData = {
+     name,
+     email,
+     joinedAt: userToEdit ? userToEdit.joinedAt : new Date().toISOString()
+    };
+    const docId = userToEdit ? userToEdit.id : db.collection('users').doc(currentUserId).collection('team_members').doc().id;
+    const success = await saveToFirebase('team_members', docId, userData);
+    if (success) {
+     showToast(`User '${name}' saved successfully!`);
+     closeModal();
+    }
+   }
+   // New: Function to save logged hours
+   async function saveTimeLog(event) {
+    event.preventDefault();
+    const hours = parseFloat(document.getElementById('hours-logged').value);
+    const comment = document.getElementById('log-comment').value.trim();
+    if (isNaN(hours) || hours <= 0) {
+     showToast("Please enter a valid number of hours.", "error");
+     return;
+    }
+    const ticket = tickets.find(t => t.id === timeLogTicketId);
+    if (!ticket) {
+     showToast("Ticket not found.", "error");
+     return;
+    }
+    // Add the new log entry
+    const newLog = {
+     hours,
+     comment,
+     timestamp: new Date().toISOString()
+    };
+    const updatedLogs = [...(ticket.timeLogs || []), newLog];
+    // Calculate new total time
+    const totalHours = hours;
+    const success = await saveToFirebase('tickets', timeLogTicketId, {
+     timeLogged: totalHours,
+     timeLogs: updatedLogs
+    });
+    if (success) {
+     showToast(`${hours} hours logged successfully!`);
+     closeModal();
+    }
+   }
+   async function deleteTicket(ticketId) {
+    if (confirm("Are you sure you want to delete this ticket?")) {
+     const success = await deleteFromFirebase('tickets', ticketId);
+     if (success) {
+      showToast("Ticket deleted!");
+     }
+    }
+   }
+   async function deleteSprint(sprintId) {
+    if (confirm("Are you sure you want to delete this sprint? This will not delete its tickets.")) {
+     const success = await deleteFromFirebase('sprints', sprintId);
+     if (success) {
+      showToast("Sprint deleted!");
+     }
+    }
+   }
+   async function deleteUser(userId) {
+    if (confirm("Are you sure you want to delete this user?")) {
+     const success = await deleteFromFirebase('team_members', userId);
+     if (success) {
+      showToast("User deleted!");
+     }
+    }
+   }
+
+   function renderDashboard() {
+    renderDashboardStats();
+    renderCharts();
+   }
+
+   function renderDashboardStats() {
+    const dashboardStats = document.getElementById('dashboardStats');
+    const totalTickets = tickets.length;
+    const completedTickets = tickets.filter(t => t.status === 'done').length;
+    const openTickets = tickets.filter(t => t.status === 'todo' || t.status === 'progress' || t.status === 'review').length;
+    const today = new Date();
+today.setHours(0, 0, 0, 0); // normalize to midnight
+
+const activeSprints = sprints.filter(s => {
+  const end = new Date(s.endDate);
+  end.setHours(0, 0, 0, 0);
+  return end >= today; // include today as active
+}).length;
+
+    dashboardStats.innerHTML = `
+                
+																					
+																					<div class="stat-card bg-card p-6 rounded-xl shadow-md flex flex-col items-center hover:shadow-xl transition-shadow" onclick="openDashboardDetails('total')">
+																						<i class="fas fa-ticket-alt text-4xl text-purple-500 mb-2"></i>
+																						<p class="text-sm text-gray-500">Total Tickets</p>
+																						<span class="text-4xl font-bold text-gray-800">${totalTickets}</span>
+																					</div>
+																					<div class="stat-card bg-card p-6 rounded-xl shadow-md flex flex-col items-center hover:shadow-xl transition-shadow" onclick="openDashboardDetails('completed')">
+																						<i class="fas fa-check-circle text-4xl text-green-500 mb-2"></i>
+																						<p class="text-sm text-gray-500">Completed Tickets</p>
+																						<span class="text-4xl font-bold text-gray-800">${completedTickets}</span>
+																					</div>
+																					<div class="stat-card bg-card p-6 rounded-xl shadow-md flex flex-col items-center hover:shadow-xl transition-shadow" onclick="openDashboardDetails('open')">
+																						<i class="fas fa-folder-open text-4xl text-blue-500 mb-2"></i>
+																						<p class="text-sm text-gray-500">Open Tickets</p>
+																						<span class="text-4xl font-bold text-gray-800">${openTickets}</span>
+																					</div>
+																					<div class="stat-card bg-card p-6 rounded-xl shadow-md flex flex-col items-center hover:shadow-xl transition-shadow" onclick="openDashboardDetails('sprints')">
+																						<i class="fas fa-bolt text-4xl text-orange-500 mb-2"></i>
+																						<p class="text-sm text-gray-500">Active Sprints</p>
+																						<span class="text-4xl font-bold text-gray-800">${activeSprints}</span>
+																					</div>
+            `;
+   }
+   // Change: Passed a flag to openTicketDetailsModal to hide buttons
+   
+// Project Dashboard Modal
+   
+function openDashboardDetails(type) {
+  let title = '';
+  let items = [];
+  let htmlContent = '';
+
+  if (type === 'total') {
+    title = 'All Tickets';
+    items = tickets;
+  } else if (type === 'completed') {
+    title = 'Completed Tickets';
+    items = tickets.filter(t => t.status === 'done');
+  } else if (type === 'open') {
+    title = 'Open Tickets';
+    items = tickets.filter(t => t.status !== 'done');
+  } else if (type === 'sprints') {
+    title = 'Active Sprints';
+    items = sprints.filter(s => new Date(s.endDate) >= new Date().setHours(0,0,0,0));
+
+    // Build Sprint Layout
+    const renderSprints = (sprintList) => {
+      return sprintList.map(sprint => {
+        const ticketsInSprint = tickets.filter(t => t.sprintId === sprint.id);
+
+        // Count by status
+        const statusCounts = ticketsInSprint.reduce((acc, t) => {
+          const k = (t.status || "").toLowerCase();
+          acc[k] = (acc[k] || 0) + 1;
+          return acc;
+        }, {});
+
+        // Priority counts
+        const priorityCounts = ticketsInSprint.reduce((acc, t) => {
+          const p = (t.priority || "").toLowerCase();
+          acc[p] = (acc[p] || 0) + 1;
+          return acc;
+        }, {});
+
+        // Total logged hours
+        const totalLogged = ticketsInSprint.reduce((sum, t) => sum + (t.timeLogged || 0), 0);
+
+        // Ticket cards with status-based color
+        const ticketListHtml = ticketsInSprint.length > 0
+          ? ticketsInSprint.map(ticket => {
+              const assignee = users.find(u => u.name === ticket.assignee);
+              const statusColor = {
+                'done': 'bg-green-50',
+                'progress': 'bg-yellow-50',
+                'review': 'bg-purple-50',
+                'todo': 'bg-blue-50'
+              }[ticket.status] || 'bg-gray-50';
+
+              return `
+                <div class="p-3 mb-2 rounded border ${statusColor}">
+                  <div class="flex justify-between">
+                    <span class="font-medium">${ticket.title}</span>
+                    <span class="text-xs text-gray-600">${ticket.status}</span>
+                  </div>
+                  <div class="text-xs text-gray-600 mt-1">
+                    <strong>Assignee:</strong> ${assignee ? assignee.name : 'Unassigned'} |
+                    <strong>Due:</strong> ${ticket.dueDate ? formatDate(ticket.dueDate) : 'N/A'} |
+                    <strong>Logged:</strong> ${ticket.timeLogged || 0}h |
+                    <strong>Sprint:</strong> ${sprint.name}
+                  </div>
+                </div>
+              `;
+            }).join('')
+          : `<p class="text-center text-gray-500 py-4">No tickets in this sprint.</p>`;
+
+        return `
+          <div class="p-4 mb-6 border rounded-lg shadow-sm bg-white">
+            <div class="flex justify-between items-center mb-4">
+              <div>
+                <h4 class="text-lg font-bold">${sprint.name}</h4>
+                <p class="text-sm text-gray-500">${formatDate(sprint.startDate)} - ${formatDate(sprint.endDate)}</p>
+              </div>
+            </div>
+
+            <!-- Sprint summary tiles -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center mb-4">
+              <div class="p-3 rounded bg-gray-100">
+                <span class="block text-lg font-bold">${ticketsInSprint.length}</span>
+                <span class="text-xs text-gray-600">Total Tickets</span>
+              </div>
+              <div class="p-3 rounded bg-gray-100">
+                <span class="block text-lg font-bold">${totalLogged}h</span>
+                <span class="text-xs text-gray-600">Logged Hours</span>
+              </div>
+              <div class="p-3 rounded bg-green-100">
+                <span class="block text-lg font-bold">${statusCounts.done || 0}</span>
+                <span class="text-xs text-gray-600">Completed</span>
+              </div>
+              <div class="p-3 rounded bg-yellow-100">
+                <span class="block text-lg font-bold">${statusCounts.progress || 0}</span>
+                <span class="text-xs text-gray-600">In Progress</span>
+              </div>
+            </div>
+
+            <!-- Priority distribution -->
+            <h5 class="font-semibold mb-2">Priority Distribution</h5>
+            <div class="grid grid-cols-3 gap-2 text-center mb-4">
+              <div class="p-2 rounded bg-red-100">
+                <span class="block text-lg font-bold">${priorityCounts.high || 0}</span>
+                <span class="text-xs text-gray-600">High</span>
+              </div>
+              <div class="p-2 rounded bg-yellow-100">
+                <span class="block text-lg font-bold">${priorityCounts.medium || 0}</span>
+                <span class="text-xs text-gray-600">Medium</span>
+              </div>
+              <div class="p-2 rounded bg-green-100">
+                <span class="block text-lg font-bold">${priorityCounts.low || 0}</span>
+                <span class="text-xs text-gray-600">Low</span>
+              </div>
+            </div>
+
+            <!-- Ticket list -->
+            <h5 class="font-semibold mb-2">Tickets</h5>
+            <div class="max-h-60 overflow-y-auto border rounded p-2">
+              ${ticketListHtml}
+            </div>
+          </div>
+        `;
+      }).join('');
+    };
+
+    // Initial sprint render
+    htmlContent = `
+      <div class="my-4">
+        <label class="font-semibold text-sm mr-2">Filter:</label>
+        <select id="sprint-filter" class="border rounded p-1 text-sm">
+          <option value="active" selected>Active Sprints</option>
+          <option value="inactive">Inactive Sprints</option>
+          <option value="all">All Sprints</option>
+        </select>
+      </div>
+      <div id="sprint-container">
+        ${renderSprints(items)}
+      </div>
+    `;
+
+    // After modal opens, bind filter change
+    setTimeout(() => {
+      document.getElementById("sprint-filter")?.addEventListener("change", (e) => {
+        let filtered = [];
+       if (e.target.value === "active") {
+  filtered = sprints.filter(s => new Date(s.endDate) >= new Date().setHours(0,0,0,0));
+} else if (e.target.value === "inactive") {
+  filtered = sprints.filter(s => new Date(s.endDate) < new Date().setHours(0,0,0,0));
+} else {
+  filtered = sprints;
+}
+        document.getElementById("sprint-container").innerHTML = renderSprints(filtered);
+      });
+    }, 200);
+  }
+
+  // --- Summaries for non-sprints ---
+  let statusCounts = {};
+  let priorityCounts = {};
+  if (type !== 'sprints') {
+    statusCounts = items.reduce((acc, t) => {
+      const key = (t.status || 'unknown').toLowerCase();
+      acc[key] = (acc[key] || 0) + 1;
+      return acc;
+    }, {});
+    priorityCounts = items.reduce((acc, t) => {
+      const key = (t.priority || 'N/A').toLowerCase();
+      acc[key] = (acc[key] || 0) + 1;
+      return acc;
+    }, {});
+  }
+
+  // --- Ticket list details for non-sprints ---
+  if (type !== 'sprints') {
+    htmlContent = items.map(ticket => {
+      const assignee = users.find(u => u.name === ticket.assignee)?.name || "Unassigned";
+      const sprintName = sprints.find(s => s.id === ticket.sprintId)?.name || "No Sprint";
+      return `
+        <div class="p-3 border-b hover:bg-gray-50 cursor-pointer" onclick="openTicketDetailsModal('${ticket.id}', true)">
+          <p class="font-semibold">${ticket.title}</p>
+          <p class="text-sm text-gray-500">
+            Status: ${ticket.status} | Priority: ${ticket.priority || "N/A"} | 
+            Assignee: ${assignee} | Due: ${ticket.dueDate ? formatDate(ticket.dueDate) : "N/A"} | 
+            Logged: ${ticket.timeLogged || 0}h | Sprint: ${sprintName}
+          </p>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // --- Summary blocks for non-sprints ---
+  const summaryHtml = (type !== 'sprints') ? `
+    <div class="my-4">
+      <h4 class="font-bold mb-2">Total Tickets</h4>
+      <div class="p-3 rounded bg-gray-100 text-center">
+        <span class="block text-xl font-bold">${items.length}</span>
+        <span class="text-sm text-gray-600">Tickets</span>
+      </div>
+    </div>
+
+    <div class="my-4">
+      <h4 class="font-bold mb-2">Ticket Status</h4>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+        <div class="p-2 rounded bg-green-100">
+          <span class="block text-lg font-bold">${statusCounts.done || 0}</span>
+          <span class="text-xs text-gray-600">Completed</span>
+        </div>
+        <div class="p-2 rounded bg-yellow-100">
+          <span class="block text-lg font-bold">${statusCounts.progress || 0}</span>
+          <span class="text-xs text-gray-600">In Progress</span>
+        </div>
+        <div class="p-2 rounded bg-purple-100">
+          <span class="block text-lg font-bold">${statusCounts.review || 0}</span>
+          <span class="text-xs text-gray-600">Review</span>
+        </div>
+        <div class="p-2 rounded bg-blue-100">
+          <span class="block text-lg font-bold">${statusCounts.todo || 0}</span>
+          <span class="text-xs text-gray-600">To Do</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="my-4">
+      <h4 class="font-bold mb-2">Priority Distribution</h4>
+      <div class="grid grid-cols-3 gap-2 text-center">
+        <div class="p-2 rounded bg-red-100">
+          <span class="block text-lg font-bold">${priorityCounts.high || 0}</span>
+          <span class="text-xs text-gray-600">High</span>
+        </div>
+        <div class="p-2 rounded bg-yellow-100">
+          <span class="block text-lg font-bold">${priorityCounts.medium || 0}</span>
+          <span class="text-xs text-gray-600">Medium</span>
+        </div>
+        <div class="p-2 rounded bg-green-100">
+          <span class="block text-lg font-bold">${priorityCounts.low || 0}</span>
+          <span class="text-xs text-gray-600">Low</span>
+        </div>
+      </div>
+    </div>
+  ` : ``;
+
+  // --- Modal content ---
+  const modalContent = `
+    <div class="modal-content max-w-3xl">
+      <div class="flex justify-between items-center pb-4 border-b">
+        <h3 class="text-2xl font-bold">${title} Details</h3>
+<div class="flex gap-2">
+  ${type !== 'sprints' ? `
+    <button id="export-csv" class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm">Export CSV</button>
+    <button id="export-pdf" class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-sm">Export PDF</button>
+  ` : ''}
+  <button class="modal-close-btn"><i class="fas fa-times"></i></button>
+</div>
+
+      </div>
+
+      <div class="mt-6 max-h-[70vh] overflow-y-auto">
+        ${summaryHtml}
+        ${items.length > 0 ? htmlContent : `<p class="text-center text-gray-500 py-8">No items to display.</p>`}
+      </div>
+    </div>
+  `;
+
+  openModal(modalContent, (e) => e.preventDefault());
+
+  // bind export
+  setTimeout(() => {
+    document.getElementById("export-csv")?.addEventListener("click", () => exportTicketsCSV(items, title));
+    document.getElementById("export-pdf")?.addEventListener("click", () => exportTicketsPDF(items, title));
+  }, 100);
+}
+
+
+
+function exportTicketsCSV(items, title) {
+  if (!items || items.length === 0) {
+    alert("No data to export.");
+    return;
+  }
+
+  const header = ["ID", "Title", "Status", "Priority", "Assignee", "Due Date", "Logged Hours", "Sprint"];
+  const rows = items.map(t => {
+    const assignee = users.find(u => u.name === t.assignee)?.name || "Unassigned";
+    const sprintName = sprints.find(s => s.id === t.sprintId)?.name || "No Sprint";
+    return [
+      t.id,
+      `"${t.title}"`,
+      t.status,
+      t.priority || "N/A",
+      assignee,
+      t.dueDate || "N/A",
+      t.timeLogged || 0,
+      sprintName
+    ];
+  });
+
+  const csv = [header, ...rows].map(r => r.join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${title.replace(/\s+/g, "_")}.csv`;
+  a.click();
+
+  URL.revokeObjectURL(url);
+}
+
+function exportTicketsPDF(items, title) {
+  if (!items || items.length === 0) {
+    alert("No data to export.");
+    return;
+  }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  doc.setFontSize(16);
+  doc.text(`${title}`, 10, 15);
+
+  let y = 25;
+  doc.setFontSize(10);
+
+  items.forEach((t, i) => {
+    const assignee = users.find(u => u.name === t.assignee)?.name || "Unassigned";
+    const sprintName = sprints.find(s => s.id === t.sprintId)?.name || "No Sprint";
+    const due = t.dueDate ? formatDate(t.dueDate) : "N/A";
+
+    const line = `${i + 1}. ${t.title} [${t.status}] | Priority: ${t.priority || "N/A"} | Assignee: ${assignee} | Due: ${due} | Logged: ${t.timeLogged || 0}h | Sprint: ${sprintName}`;
+
+    const wrapped = doc.splitTextToSize(line, 180);
+    doc.text(wrapped, 10, y);
+    y += wrapped.length * 6;
+
+    if (y > 270) {
+      doc.addPage();
+      y = 20;
+    }
+  });
+
+  doc.save(`${title.replace(/\s+/g, "_")}.pdf`);
+}
+
+
+
+   function renderCharts() {
+    Chart.register(ChartDataLabels);
+    destroyAllCharts();
+    const datalabelsConfig = {
+     color: '#4b5563',
+     font: {
+      weight: 'bold',
+     },
+     formatter: (value) => value
+    };
+    const statusData = tickets.reduce((acc, ticket) => {
+     acc[ticket.status] = (acc[ticket.status] || 0) + 1;
+     return acc;
+    }, {});
+    const statusChart = new Chart(document.getElementById('statusChart'), {
+     type: 'pie',
+     data: {
+      labels: ['To Do', 'In Progress', 'In Review', 'Done'],
+      datasets: [{
+       data: [
+        statusData.todo || 0,
+        statusData.progress || 0,
+        statusData.review || 0,
+        statusData.done || 0
+       ],
+       backgroundColor: ['#f59e0b', '#3b82f6', '#ef4444', '#10b981'],
+       hoverOffset: 4
+      }]
+     },
+     options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+       legend: {
+        position: 'top'
+       },
+       datalabels: datalabelsConfig
+      }
+     }
+    });
+    chartInstances.statusChart = statusChart;
+    const priorityData = tickets.reduce((acc, ticket) => {
+     acc[ticket.priority] = (acc[ticket.priority] || 0) + 1;
+     return acc;
+    }, {});
+    const priorityChart = new Chart(document.getElementById('priorityChart'), {
+     type: 'doughnut',
+     data: {
+      labels: ['High', 'Medium', 'Low'],
+      datasets: [{
+       data: [
+        priorityData.high || 0,
+        priorityData.medium || 0,
+        priorityData.low || 0
+       ],
+       backgroundColor: ['#ef4444', '#f59e0b', '#10b981'],
+       hoverOffset: 4
+      }]
+     },
+     options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+       legend: {
+        position: 'top'
+       },
+       datalabels: datalabelsConfig
+      }
+     }
+    });
+    chartInstances.priorityChart = priorityChart;
+    const timeLogData = tickets.reduce((acc, ticket) => {
+     const assigneeName = ticket.assignee || 'Unassigned';
+     acc[assigneeName] = (acc[assigneeName] || 0) + (ticket.timeLogged || 0);
+     return acc;
+    }, {});
+    const timeLogChart = new Chart(document.getElementById('timeLogChart'), {
+     type: 'bar',
+     data: {
+      labels: Object.keys(timeLogData),
+      datasets: [{
+       label: 'Time Logged (hours)',
+       data: Object.values(timeLogData),
+       backgroundColor: '#6366f1'
+      }]
+     },
+     options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+       legend: {
+        display: false
+       },
+       datalabels: datalabelsConfig
+      },
+      scales: {
+       y: {
+        beginAtZero: true
+       }
+      }
+     }
+    });
+    chartInstances.timeLogChart = timeLogChart;
+    const sprintTicketData = tickets.reduce((acc, ticket) => {
+     const sprintName = sprints.find(s => s.id === ticket.sprintId)?.name || 'Backlog';
+     acc[sprintName] = (acc[sprintName] || 0) + 1;
+     return acc;
+    }, {});
+    const sprintTicketChart = new Chart(document.getElementById('sprintTicketChart'), {
+     type: 'bar',
+     data: {
+      labels: Object.keys(sprintTicketData),
+      datasets: [{
+       label: 'Tickets',
+       data: Object.values(sprintTicketData),
+       backgroundColor: '#3b82f6'
+      }]
+     },
+     options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+       legend: {
+        display: false
+       },
+       datalabels: datalabelsConfig
+      },
+      scales: {
+       y: {
+        beginAtZero: true
+       }
+      }
+     }
+    });
+    chartInstances.sprintTicketChart = sprintTicketChart;
+    const workloadData = tickets.reduce((acc, ticket) => {
+     if (ticket.status !== 'done') {
+      const assigneeName = ticket.assignee || 'Unassigned';
+      acc[assigneeName] = (acc[assigneeName] || 0) + 1;
+     }
+     return acc;
+    }, {});
+    const workloadChart = new Chart(document.getElementById('workloadChart'), {
+     type: 'bar',
+     data: {
+      labels: Object.keys(workloadData),
+      datasets: [{
+       label: 'Open Tickets',
+       data: Object.values(workloadData),
+       backgroundColor: '#ef4444'
+      }]
+     },
+     options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+       legend: {
+        display: false
+       },
+       datalabels: datalabelsConfig
+      },
+      scales: {
+       y: {
+        beginAtZero: true
+       }
+      }
+     }
+    });
+    chartInstances.workloadChart = workloadChart;
+    renderVelocityChart();
+   }
+
+   function renderVelocityChart() {
+    const completedTicketsPerSprint = sprints.sort((a, b) => new Date(a.startDate) - new Date(b.startDate)).map(sprint => {
+     const completedCount = tickets.filter(t => t.sprintId === sprint.id && t.status === 'done').length;
+     return {
+      sprintName: sprint.name,
+      completedCount
+     };
+    });
+    const velocityEmptyState = document.getElementById('velocity-empty');
+    const velocityChartCanvas = document.getElementById('velocityChart');
+    if (completedTicketsPerSprint.length === 0) {
+     velocityEmptyState.classList.remove('hidden');
+     velocityChartCanvas.classList.add('hidden');
+    } else {
+     velocityEmptyState.classList.add('hidden');
+     velocityChartCanvas.classList.remove('hidden');
+     const velocityChart = new Chart(velocityChartCanvas, {
+      type: 'bar',
+      data: {
+       labels: completedTicketsPerSprint.map(d => d.sprintName),
+       datasets: [{
+        label: 'Completed Tickets',
+        data: completedTicketsPerSprint.map(d => d.completedCount),
+        backgroundColor: '#10b981',
+        barThickness: 40
+       }]
+      },
+      options: {
+       responsive: true,
+       maintainAspectRatio: false,
+       plugins: {
+        legend: {
+         display: false
+        },
+        datalabels: {
+         color: 'white',
+         font: {
+          weight: 'bold',
+         },
+         anchor: 'end',
+         align: 'start',
+         offset: -15
+        }
+       },
+       scales: {
+        y: {
+         beginAtZero: true,
+         title: {
+          display: true,
+          text: 'Number of Tickets'
+         }
+        },
+        x: {
+         title: {
+          display: true,
+          text: 'Sprint'
+         }
+        }
+       }
+      }
+     });
+     chartInstances.velocityChart = velocityChart;
+    }
+   }
+
+   function destroyAllCharts() {
+    for (let chartId in chartInstances) {
+     if (chartInstances[chartId]) {
+      chartInstances[chartId].destroy();
+     }
+    }
+    chartInstances = {};
+   }
+
+function filterTickets(ticketsToFilter) {
+  const status = statusFilterSelect.value;
+  const priority = priorityFilterSelect.value;
+  const assignee = assigneeFilterSelect.value;
+  const searchTerm = searchInput.value.toLowerCase();
+
+  return ticketsToFilter.filter(ticket => {
+    const matchesStatus = !status || ticket.status === status;
+    const matchesPriority = !priority || ticket.priority === priority;
+
+    let matchesAssignee = true;
+    if (assignee) {
+      if (assignee === "__unassigned__") {
+        matchesAssignee = !ticket.assignee || ticket.assignee.trim() === "";
+      } else {
+        matchesAssignee = ticket.assignee === assignee;
+      }
+    }
+
+    const matchesSearch =
+      !searchTerm ||
+      ticket.title.toLowerCase().includes(searchTerm) ||
+      ticket.description.toLowerCase().includes(searchTerm);
+
+    return matchesStatus && matchesPriority && matchesAssignee && matchesSearch;
+  });
+}
+
+
+   function filterAndRenderTickets() {
+    renderTickets();
+   }
+
+function updateFilterOptions() {
+  // Reset dropdown with "All" and "Unassigned"
+  assigneeFilterSelect.innerHTML = `
+    <option value="">All Assignees</option>
+  `;
+
+  // Collect unique non-empty assignees
+  const uniqueAssignees = [...new Set(
+    tickets.map(t => t.assignee).filter(a => a && a.trim() !== "")
+  )];
+
+  // Append each valid assignee
+  uniqueAssignees.forEach(assignee => {
+    const option = document.createElement('option');
+    option.value = assignee;
+    option.textContent = users.find(u => u.name === assignee)?.name || assignee;
+    assigneeFilterSelect.appendChild(option);
+  });
+}
+
+
+   function dragStart(event, ticketId) {
+    draggedTicketId = ticketId;
+    event.dataTransfer.setData("text/plain", ticketId);
+   }
+
+   function allowDrop(event) {
+    event.preventDefault();
+    const targetColumn = event.target.closest('.kanban-column');
+    if (targetColumn) {
+     targetColumn.classList.add('drag-over');
+    }
+   }
+
+   function dragLeave(event) {
+    const targetColumn = event.target.closest('.kanban-column');
+    if (targetColumn) {
+     targetColumn.classList.remove('drag-over');
+    }
+   }
+   async function dropTicket(event) {
+    event.preventDefault();
+    const targetColumn = event.target.closest('.kanban-column');
+    if (!targetColumn) return;
+    targetColumn.classList.remove('drag-over');
+    const ticketId = event.dataTransfer.getData("text/plain");
+    const newStatus = targetColumn.getAttribute('data-status');
+    const ticketToUpdate = tickets.find(t => t.id === ticketId);
+    if (ticketToUpdate && ticketToUpdate.status !== newStatus) {
+     await saveToFirebase('tickets', ticketId, {
+      status: newStatus
+     });
+     showToast(`Ticket moved to '${newStatus}'!`);
+    }
+   }
+
+   function convertToCsv(data) {
+    const headers = ["Title", "Description", "Type", "Priority", "Status", "Assignee", "Sprint", "Due Date", "Time Logged"];
+    const rows = data.map(ticket => {
+     const assigneeName = users.find(u => u.name === ticket.assignee)?.name || 'Unassigned';
+     const sprintName = sprints.find(s => s.id === ticket.sprintId)?.name || 'Backlog';
+     return [`"${ticket.title.replace(/"/g, '""')}"`, `"${ticket.description?.replace(/"/g, '""') || ''}"`,
+      ticket.type,
+      ticket.priority,
+      ticket.status,
+      assigneeName,
+      sprintName,
+      formatCsvDate(ticket.dueDate),
+      ticket.timeLogged || 0
+     ].join(',');
+    });
+    return `${headers.join(',')}\n${rows.join('\n')}`;
+   }
+
+   function exportTickets() {
+    const csvData = convertToCsv(tickets);
+    const blob = new Blob([csvData], {
+     type: 'text/csv;charset=utf-8;'
+    });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", "tickets_export.csv");
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast("Tickets exported to CSV!");
+   }
+
+   function initApp() {
+    firebase.auth().onAuthStateChanged(async (user) => {
+     if (user) {
+      currentUserId = user.uid;
+      showToast("Logged in successfully!", "success");
+      setupFirebaseListeners(currentUserId);
+     } else {
+      currentUserId = null;
+      showToast("Please log in to manage your project.", "info");
+      console.log("User signed out.");
+     }
+     showView('dashboard');
+    });
+   }
+   async function dummyLogin() {
+    try {
+     const email = 'testuser@example.com';
+     const password = 'password123';
+     await firebase.auth().signInWithEmailAndPassword(email, password);
+    } catch (error) {
+     if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+      await firebase.auth().createUserWithEmailAndPassword('testuser@example.com', 'password123');
+      showToast("Dummy account created!", "info");
+     }
+    }
+   }
+   async function dummyLogout() {
+    await firebase.auth().signOut();
+   }
+   window.dummyLogin = dummyLogin;
+   window.dummyLogout = dummyLogout;
+   window.onload = initApp;
+  </script>
+ </body>
+</html>

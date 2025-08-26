@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login / Sign Up</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <!-- Inter font (you referenced it already) -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+  
+  
+  html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* 🔥 prevents the scrollbar */
+}
+
+
+/* ====== NEW: split layout like chooser ====== */
+.wrapper {
+  display: flex;
+  height: 100%;   /* instead of 100vh */
+  width: 100%;
+}
+
+.left-hero {
+  flex: 1;
+  height: 100%;   /* ensure full height */
+  background: url("LoginBanner1.png") center center / cover no-repeat;
+  position: relative;
+}
+.left-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+}
+
+
+.left-badge {
+  position: absolute;
+  left: 18px;
+  bottom: 18px;
+  background: rgba(0, 0, 0, .6);
+  color: #fff;
+  font-size: 13px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  backdrop-filter: blur(3px);
+}
+
+
+
+/* right auth pane */
+.right-pane{
+  flex:1;
+  display:flex; align-items:center; justify-content:center;
+  padding:34px;
+}
+
+/* ====== YOUR EXISTING CARD & UI (kept) ====== */
+
+/* Card */
+.auth-card {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(12px);
+  padding: 40px;
+  border-radius: 20px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+  width: 380px;
+  text-align: center;
+  animation: fadeIn 0.8s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {opacity: 0; transform: translateY(20px);}
+  to {opacity: 1; transform: translateY(0);}
+}
+
+h2 {
+  margin-bottom: 8px;
+  font-size: 26px;
+  font-weight: 700;
+  color: #111827;
+}
+
+p {
+  margin-bottom: 20px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+input {
+  width: 100%;
+  padding: 12px;
+  margin: 10px 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  outline: none;
+  font-size: 15px;
+  transition: border 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+
+input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+}
+
+button {
+  padding: 12px 20px;
+  margin-top: 12px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(90deg, #2563eb, #7c3aed);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  font-size: 16px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+button:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+}
+
+button i {margin-right: 6px;}
+
+button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3);
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  margin-top: 15px;
+  font-size: 13px;
+  color: #6366f1;
+  cursor: pointer;
+  font-weight: 500;
+  text-decoration: underline;
+}
+
+.nav-buttons {
+  margin-top: 25px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.nav-buttons button {
+  padding: 10px;
+  background: #f1f5f9;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.nav-buttons button:hover {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+.nav-buttons button:nth-child(2) {
+  background: linear-gradient(90deg, #f59e0b, #d97706);
+}
+
+.nav-buttons button:nth-child(3) {
+  background: linear-gradient(90deg, #ef4444, #dc2626);
+}
+
+#authMessage {
+  background: #fef2f2;
+  color: #dc2626;
+  font-weight: 500;
+  margin: 10px 0;
+  padding: 10px;
+  border-radius: 8px;
+  border-left: 4px solid #ef4444;
+  display: none;
+  text-align: left;
+  font-size: 14px;
+}
+
+#authMessage.success {
+  background: #f0fdf4;
+  color: #16a34a;
+  border-left-color: #22c55e;
+}
+
+#authMessage.show { display: block; }
+
+/* Titles */
+#authTitle {
+  font-size: 20px;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 8px;
+}
+
+#authPrompt {
+  font-size: 14px;
+  color: #64748b;
+  margin-bottom: 20px;
+}
+
+/* Inputs (duplicate rules kept for compatibility with your code) */
+#authForm input {
+  width: 100%;
+  padding: 12px;
+  margin: 10px 0;
+  border-radius: 12px;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+  outline: none;
+  transition: 0.2s;
+}
+#authForm input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 6px rgba(99, 102, 241, 0.3);
+}
+
+/* Auth button */
+#authBtn {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(to right, #6366f1, #3b82f6);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  border-radius: 12px;
+  margin-top: 15px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+#authBtn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+/* Branding */
+.brand-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 25px;
+  text-align: center;
+  animation: fadeIn 1s ease-in-out;
+}
+.brand-header img { width: 70px; margin-bottom: 10px; }
+/* 🔧 Match “Insight Suite” to your logo color */
+.brand-header h1 {
+  font-size: 24px; font-weight: 700; margin: 5px 0 20px;
+  color: #3b3937;  /* same as logo tone */
+  letter-spacing:.2px;
+}
+.brand-header .tagline {
+  font-size: 14px; color: #64748b; margin-top: 4px; font-weight: 500;
+}
+
+/* Responsive: hide left hero on small screens */
+@media (max-width: 900px){
+  .left-hero{ display:none; }
+  .right-pane{ flex:1; }
+}
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <!-- LEFT branding panel (like chooser) -->
+    <aside class="left-hero">
+      <div class="left-badge"><i class="fa-solid fa-chart-line"></i> Business Analysis</div>
+    </aside>
+
+    <!-- RIGHT auth panel (your original card lives here) -->
+    <main class="right-pane">
+      <div class="auth-card">
+        <!-- Branding -->
+        <div class="brand-header">
+          <img src="InsightSuiteTransparent.png" alt="Insight Suite Logo" />
+          <h1>Insight Suite</h1>
+        </div>
+
+        <h2 id="authTitle">Login</h2>
+        <p id="authPrompt">Log in to access tools</p>
+
+        <div id="authMessage"></div>
+
+        <form id="authForm">
+          <input type="email" id="email" placeholder="Email" required />
+          <input type="password" id="password" placeholder="Password" required />
+          <input type="password" id="confirmPassword" placeholder="Confirm Password" style="display:none;" />
+          <button type="submit" id="authBtn"><i class="fas fa-sign-in-alt"></i> Login</button>
+        </form>
+
+        <button class="link-btn" id="toggleMode">Don't have an account? Sign Up</button>
+
+        <div class="nav-buttons" id="navButtons">
+          <button onclick="window.location.href='project-management-tool.html'"><i class="fas fa-project-diagram"></i> Project Management Tool</button>
+          <button onclick="window.location.href='User-Story.html'"><i class="fas fa-book-open"></i> User Story Tool</button>
+          <button onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDZFm9WXz_LABJa__yzKcFFwc2fOM4_1Kk",
+      authDomain: "user-story-pro.firebaseapp.com",
+      projectId: "user-story-pro",
+      storageBucket: "user-story-pro.firebasestorage.app",
+      messagingSenderId: "70670384552",
+      appId: "1:70670384552:web:8920a6a539e1f8fca1319d",
+      measurementId: "G-5LJKY55SNF"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    let isLogin = true;
+
+    const authForm = document.getElementById("authForm");
+    const authMessage = document.getElementById("authMessage");
+    const navButtons = document.getElementById("navButtons");
+    const toggleMode = document.getElementById("toggleMode");
+    const authTitle = document.getElementById("authTitle");
+    const authPrompt = document.getElementById("authPrompt");
+    const authBtn = document.getElementById("authBtn");
+    const confirmPassword = document.getElementById("confirmPassword");
+
+    const errorMessages = {
+      'auth/invalid-email': 'Please enter a valid email address.',
+      'auth/user-disabled': 'This account has been disabled. Please contact support.',
+      'auth/user-not-found': 'No account found with this email address.',
+      'auth/wrong-password': 'Incorrect password. Please try again.',
+      'auth/invalid-credential': 'Invalid login credentials. Please check your email and password.',
+      'auth/invalid-login-credentials': 'Invalid login credentials. Please check your email and password.',
+      'auth/too-many-requests': 'Too many failed login attempts. Please try again later.',
+      'auth/network-request-failed': 'Network error. Please check your connection and try again.',
+      'auth/email-already-in-use': 'An account with this email already exists.',
+      'auth/weak-password': 'Password should be at least 6 characters long.',
+      'auth/operation-not-allowed': 'Email/password accounts are not enabled. Please contact support.',
+      'auth/requires-recent-login': 'Please log out and log back in to perform this action.',
+      'auth/internal-error': 'Invalid login credentials. Please check your email and password.',
+      'auth/invalid-api-key': 'Invalid API key. Please contact support.',
+      'auth/app-deleted': 'This app has been deleted. Please contact support.',
+      'auth/expired-action-code': 'The action code has expired. Please try again.',
+      'auth/invalid-user-token': 'Your session has expired. Please log in again.',
+      'auth/user-token-expired': 'Your session has expired. Please log in again.',
+      'auth/null-user': 'No user is currently signed in.',
+      'INVALID_LOGIN_CREDENTIALS': 'Invalid login credentials. Please check your email and password.',
+      'INVALID_EMAIL': 'Please enter a valid email address.',
+      'INVALID_PASSWORD': 'Invalid password. Please check your password and try again.',
+      'EMAIL_NOT_FOUND': 'No account found with this email address.',
+      'USER_DISABLED': 'This account has been disabled. Please contact support.',
+      'TOO_MANY_ATTEMPTS_TRY_LATER': 'Too many failed attempts. Please try again later.',
+      'WEAK_PASSWORD': 'Password should be at least 6 characters long.',
+      'default': 'Invalid login credentials. Please check your email and password.'
+    };
+
+    function showMessage(message, isError = true) {
+      const messageDiv = authMessage;
+      messageDiv.textContent = message;
+      messageDiv.className = isError ? 'show' : 'show success';
+      setTimeout(() => {
+        messageDiv.className = '';
+        messageDiv.textContent = '';
+      }, 5000);
+    }
+
+    function getErrorMessage(error) {
+      let errorCode = '';
+      if (error.code) errorCode = error.code;
+      else if (error.error && error.error.message) errorCode = error.error.message;
+      else if (typeof error === 'string') errorCode = error;
+      return errorMessages[errorCode] || errorMessages['default'];
+    }
+
+    toggleMode.addEventListener("click", () => {
+      isLogin = !isLogin;
+      authMessage.className = '';
+      authMessage.textContent = '';
+      if (isLogin) {
+        authTitle.textContent = "Login";
+        authPrompt.textContent = "Log in to access tools";
+        authBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login';
+        toggleMode.textContent = "Don't have an account? Sign Up";
+        confirmPassword.style.display = "none";
+      } else {
+        authTitle.textContent = "Sign Up";
+        authPrompt.textContent = "Create an account to start using tools";
+        authBtn.innerHTML = '<i class="fas fa-user-plus"></i> Sign Up';
+        toggleMode.textContent = "Already have an account? Login";
+        confirmPassword.style.display = "block";
+      }
+    });
+
+    authForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      const confirm = confirmPassword.value;
+
+      authMessage.className = '';
+      authMessage.textContent = '';
+
+      authBtn.disabled = true;
+      const originalBtnText = authBtn.innerHTML;
+      authBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Please wait...';
+
+      try {
+        if (isLogin) {
+          await auth.signInWithEmailAndPassword(email, password);
+          window.location.href = "chooser.html";
+        } else {
+          if (password !== confirm) { showMessage("Passwords do not match."); return; }
+          await auth.createUserWithEmailAndPassword(email, password);
+          window.location.href = "chooser.html";
+        }
+      } catch (error) {
+        const errorMessage = getErrorMessage(error);
+        showMessage(errorMessage);
+      } finally {
+        authBtn.disabled = false;
+        authBtn.innerHTML = originalBtnText;
+      }
+    });
+
+    auth.onAuthStateChanged(user => {
+      const authFormEl = document.getElementById("authForm");
+      const toggleModeEl = document.getElementById("toggleMode");
+      const navButtonsEl = document.getElementById("navButtons");
+      if (user) {
+        authFormEl.style.display = "none";
+        toggleModeEl.style.display = "none";
+        navButtonsEl.style.display = "flex";
+        authMessage.className = '';
+        authMessage.textContent = '';
+      } else {
+        authFormEl.style.display = "block";
+        toggleModeEl.style.display = "block";
+        navButtonsEl.style.display = "none";
+      }
+    });
+
+    function logout() {
+      auth.signOut().then(() => {
+        showMessage("Successfully logged out!", false);
+      }).catch(() => {
+        showMessage("Error logging out. Please try again.");
+      });
+    }
+  </script>
+</body>
+</html>

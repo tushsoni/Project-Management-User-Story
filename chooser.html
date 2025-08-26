@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Choose an App</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    :root{
+      --ink:#0f172a; --muted:#64748b; --card:#ffffff; --bg:#f7f8fb;
+      --ring:rgba(37,99,235,.18); --shadow:0 14px 40px rgba(2,8,23,.12);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; min-height:100svh; display:flex; background:var(--bg);
+      font-family:Segoe UI,system-ui,-apple-system,Roboto,Arial,sans-serif; color:var(--ink);
+    }
+
+.left {
+  flex: 1.1;
+  min-height: 100vh;   /* full viewport height */
+  background: url('./ChooserBanner1.png') no-repeat center center;
+  background-size: cover;   /* ensures full coverage */
+  position: relative;
+  isolation: isolate;
+}
+
+    .left::after{
+      content:''; position:absolute; inset:0; background:linear-gradient(120deg, rgba(2,6,23,.35), rgba(2,6,23,.15));
+      z-index:0;
+    }
+    .left .badge{
+      position:absolute; left:28px; bottom:28px; z-index:1;
+      color:#fff; font-weight:600; letter-spacing:.2px; font-size:14px;
+      background:rgba(15,23,42,.55); padding:10px 14px; border-radius:12px; backdrop-filter: blur(6px);
+    }
+
+/* Right: chooser */
+.right{
+  flex:1; 
+  display:flex; 
+  flex-direction:column;   /* so logout stays outside panel */
+  align-items:center; 
+  justify-content:flex-start;
+  padding:48px;
+  position:relative;
+  overflow-y:auto;          /* scroll only right section */
+  max-height:100vh;         /* keep height limited to viewport */
+}
+
+.logout{
+  position:fixed;   /* always at viewport corner */
+  top:28px; 
+  right:28px;
+  border:0; cursor:pointer;
+  background:#ef4444; color:#fff;
+  padding:10px 14px; border-radius:12px; font-weight:600;
+  display:flex; align-items:center; gap:8px;
+  z-index:1000;      /* stays above panel */
+}
+
+.logout:hover{
+  background:#dc2626;
+}
+
+    @keyframes fade{from{opacity:0;transform:translateY(12px)}}
+    .title{margin:0 0 6px; font-size:28px; font-weight:800}
+    .sub{margin:0 0 28px; color:var(--muted)}
+    .grid{
+      display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px;
+    }
+	
+.panel{
+  width:min(720px,100%);  /* slightly smaller */
+  background:var(--card); 
+  border-radius:20px; 
+  box-shadow:var(--shadow);
+  padding:48px;           /* reduced padding so content fits */
+  margin-top:24px;        /* space below logout */
+  animation:fade .45s ease-out both;
+}
+	
+
+.grid{
+  display:grid; 
+  grid-template-columns:repeat(auto-fit, minmax(160px,1fr)); /* responsive tile grid */
+  justify-content:center;
+  gap:24px;
+}
+
+    .tile{
+      aspect-ratio:1/1; border-radius:18px; background:#fff; border:1px solid #e5e7eb;
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      gap:10px; cursor:pointer; text-align:center; transition:transform .2s, box-shadow .2s, border-color .2s;
+      box-shadow:0 1px 0 rgba(2,8,23,.02);
+    }
+    .tile i{font-size:30px}
+    .tile span{font-weight:700}
+    .tile.pm{border-top:5px solid #2563eb}
+    .tile.us{border-top:5px solid #f59e0b}
+	.tile.swot {border-top:5px solid #10b981;}  /* Green */
+.tile.brd  {border-top:5px solid #8b5cf6;}  /* Purple */
+.tile.rca  {border-top:5px solid #ef4444;}  /* Red */
+.tile.diagram  {border-top:5px solid #db7d08;}  /* Red */
+    .tile:hover{
+  transform:translateY(-6px); 
+  box-shadow:0 18px 34px rgba(2,8,23,.12); 
+  border-color:#cbd5e1;
+}
+.hint{margin-top:18px; color:var(--muted); font-size:12px; text-align:center}
+
+
+/* Info icon inside tile */
+.tile {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Info icon hidden by default */
+.tile {
+  position: relative;
+  overflow: visible; /* was hidden by default */
+}
+
+/* Info icon */
+/* Info icon */
+.tile .info {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9); /* subtle light bg */
+  color: #2563eb;                       /* blue icon */
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity .25s ease, transform .2s ease;
+  z-index: 10;
+  box-shadow: 0 2px 6px rgba(0,0,0,.08);
+}
+
+.tile:hover .info {
+  opacity: 1;
+}
+
+.tile .info:hover {
+  background: rgba(255, 255, 255, 1);  /* clean white */
+  color: #1d4ed8;                      /* darker blue on hover */
+  transform: scale(1.1);               /* small pop effect */
+}
+
+/* Tooltip popup */
+.tile .info::after {
+  content: attr(data-tip);
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-100%);
+  background: #111827;
+  color: #fff;
+  font-size: 13px;
+  line-height: 1.4;
+  padding: 8px 12px;
+  border-radius: 8px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .25s, transform .25s;
+  box-shadow: 0 6px 18px rgba(0,0,0,.25);
+  white-space: normal;
+  width: 220px;
+  text-align: left;
+  z-index: 20;
+}
+
+/* Arrow */
+.tile .info::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 10px;
+  height: 10px;
+  background: #111827;
+  opacity: 0;
+  transition: opacity .25s;
+  z-index: 19;
+}
+
+/* Show tooltip */
+.tile .info:hover::after,
+.tile .info:hover::before {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-110%);
+}
+
+
+
+
+
+
+
+
+
+  </style>
+</head>
+<body>
+  <section class="left">
+    <div class="badge"><i class="fa-solid fa-chart-line"></i> Business Analysis</div>
+  </section>
+
+ <section class="right">
+  <button class="logout" id="logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+
+  <div class="panel">
+    <h2 class="title">Welcome</h2>
+    <p class="sub">Choose a tool to continue</p>
+
+<div class="grid">
+  <!-- Project Management -->
+  <div class="tile pm" onclick="window.open('project-management-tool.html','_blank')">
+    <i class="fa-solid fa-diagram-project" style="color:#2563eb"></i>
+    <span>Project Management</span>
+    <div class="info" data-tip="Plan, track, and manage your projects effectively with milestones and tasks.">
+      <i class="fa-solid fa-circle-info"></i>
+    </div>
+  </div>
+
+  <!-- User Story -->
+  <div class="tile us" onclick="window.open('User-Story.html','_blank')">
+    <i class="fa-solid fa-book-open" style="color:#f59e0b"></i>
+    <span>User Story</span>
+    <div class="info" data-tip="Create and organize user stories for agile development and collaboration.">
+      <i class="fa-solid fa-circle-info"></i>
+    </div>
+  </div>
+
+  <!-- SWOT Analysis -->
+  <div class="tile swot" onclick="window.open('SWOT.html','_blank')">
+    <i class="fa-solid fa-chart-pie" style="color:#16a34a"></i>
+    <span>SWOT Analysis</span>
+    <div class="info" data-tip="Generate strengths, weaknesses, opportunities, and threats with AI assistance.">
+      <i class="fa-solid fa-circle-info"></i>
+    </div>
+  </div>
+
+  <!-- BRD Generator -->
+  <div class="tile brd" onclick="window.open('BRD-Generator.html','_blank')">
+    <i class="fa-solid fa-file-contract" style="color:#9333ea"></i>
+    <span>BRD Generator</span>
+    <div class="info" data-tip="Automatically create Business Requirement Documents with AI support.">
+      <i class="fa-solid fa-circle-info"></i>
+    </div>
+  </div>
+
+  <!-- RCA Generator -->
+  <div class="tile rca" onclick="window.open('RCA-Generator.html','_blank')">
+    <i class="fa-solid fa-magnifying-glass-chart" style="color:#e11d48"></i>
+    <span>RCA Generator</span>
+    <div class="info" data-tip="Perform Root Cause Analysis faster with AI-powered insights.">
+      <i class="fa-solid fa-circle-info"></i>
+    </div>
+  </div>
+<div class="tile diagram" onclick="window.open('Diagram.html','_blank')">
+  <!-- Icon changed to 'fa-sitemap' for diagram/structure feel -->
+  <i class="fa-solid fa-sitemap" style="color:#db7d08"></i>
+  <span>Diagram (draw.io)</span>
+  <div class="info" data-tip="Perfect for flowcharts, process mapping, and business analysis.">
+    <i class="fa-solid fa-circle-info"></i>
+  </div>
+</div>
+
+</div>
+
+
+    <p class="hint">You’re signed in — switching tools won’t log you out. Use the Logout button anytime.</p>
+  </div>
+</section>
+
+
+  <!-- Firebase v8 -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script>
+    // Same config as login.html
+    const firebaseConfig = {
+      apiKey: "AIzaSyDZFm9WXz_LABJa__yzKcFFwc2fOM4_1Kk",
+      authDomain: "user-story-pro.firebaseapp.com",
+      projectId: "user-story-pro",
+      storageBucket: "user-story-pro.firebasestorage.app",
+      messagingSenderId: "70670384552",
+      appId: "1:70670384552:web:8920a6a539e1f8fca1319d",
+      measurementId: "G-5LJKY55SNF"
+    };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    // Guard route: if not logged in → back to login
+    auth.onAuthStateChanged(user => {
+      if (!user) window.location.href = 'index.html';
+    });
+
+    // Logout
+    document.getElementById('logout').addEventListener('click', async () => {
+      try { await auth.signOut(); } finally { location.href = 'index.html'; }
+    });
+  </script>
+</body>
+</html>

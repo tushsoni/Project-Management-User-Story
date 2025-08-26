@@ -1,0 +1,2190 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>User Story Manager</title>
+    <style>
+      /* Reset and Core Styles */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      :root {
+        --bg1: #eef3f9;
+        --bg2: #ddebf8;
+        --card: #ffffff;
+        --text: #333333;
+        --muted: #666666;
+        --ring: #4092ff;
+        --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        --chip-bg: #f1f3f5;
+        --chip: #343a40;
+      }
+
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, var(--bg1) 0%, var(--bg2) 100%);
+        min-height: 100vh;
+        color: var(--text);
+      }
+
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      .header {
+        background: var(--card);
+        border-radius: 20px;
+        padding: 20px 24px;
+        margin-bottom: 20px;
+        box-shadow: var(--shadow);
+      }
+
+      .header-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .title {
+        font-size: 2rem;
+        background: linear-gradient(135deg, #4092ff, #764ba2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-weight: 700;
+      }
+
+      .controls {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .btn {
+        background: #4092ff;
+        color: white;
+        border: none;
+        padding: 10px 16px;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.25s ease;
+      }
+
+      .btn:hover {
+        background: #367fe8;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(64, 146, 255, 0.3);
+      }
+
+      .btn-alt {
+        background: #f093fb;
+      }
+
+      .btn-alt:hover {
+        background: #e083ea;
+        box-shadow: 0 10px 20px rgba(240, 147, 251, 0.3);
+      }
+
+      .btn-ghost {
+        background: transparent;
+        color: var(--text);
+        border: 2px solid #e1e5e9;
+      }
+
+      .btn-ghost:hover {
+        background: #f0f0f0;
+        box-shadow: none;
+      }
+
+      .btn-danger {
+        background: #ff6b6b;
+      }
+
+      .btn-danger:hover {
+        background: #e85a5a;
+      }
+
+      .btn-active {
+        background: #4092ff;
+        color: white;
+        border: 2px solid #4092ff;
+      }
+
+      .btn-active:hover {
+        background: #4092ff;
+        box-shadow: none;
+        transform: none;
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+        margin-bottom: 20px;
+      }
+
+      .stat-card {
+        background: var(--card);
+        border-radius: 16px;
+        padding: 20px;
+        text-align: center;
+        box-shadow: var(--shadow);
+      }
+
+      .stat-number {
+        font-size: 2.2rem;
+        font-weight: 800;
+        color: #4092ff;
+      }
+
+      .stat-label {
+        color: var(--muted);
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        font-size: 0.9rem;
+      }
+
+      .main-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 20px;
+      }
+
+      @media (max-width: 900px) {
+        .main-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .card {
+        background: var(--card);
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: var(--shadow);
+      }
+
+      h2 {
+        font-size: 1.25rem;
+        margin-bottom: 14px;
+        color: var(--text);
+      }
+
+      .form-group {
+        margin-bottom: 14px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 600;
+        color: var(--muted);
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        padding: 12px 14px;
+        border: 2px solid #e1e5e9;
+        border-radius: 12px;
+        font-size: 15px;
+        background: rgba(255, 255, 255, 0.8);
+        outline: none;
+        transition: border-color 0.25s, box-shadow 0.25s;
+        color: #222;
+      }
+
+      input:focus,
+      select:focus,
+      textarea:focus {
+        border-color: var(--ring);
+        box-shadow: 0 0 0 3px rgba(64, 146, 255, 0.2);
+      }
+
+      textarea {
+        resize: vertical;
+        min-height: 90px;
+      }
+
+      .stories-container h2 {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .filters {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 10px;
+        margin-bottom: 18px;
+      }
+
+      .filters .filter {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .filter input,
+      .filter select {
+        padding: 8px 10px;
+      }
+
+      .story-card {
+        background: var(--card);
+        border-radius: 14px;
+        padding: 16px;
+        border-left: 4px solid #667eea;
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+        transition: transform 0.2s, border-left-color 0.3s;
+        cursor: pointer;
+      }
+
+      .story-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.1);
+      }
+
+      .story-title {
+        font-size: 1.05rem;
+        font-weight: 700;
+        margin-bottom: 6px;
+      }
+
+      .story-id {
+        font-family: 'Courier New', monospace;
+        color: var(--muted);
+        font-size: 0.85rem;
+        margin-bottom: 8px;
+      }
+
+      .story-text {
+        font-style: italic;
+        color: #555;
+        margin-bottom: 10px;
+      }
+
+      .meta {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
+      }
+
+      .badge {
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+      }
+
+      .priority-low {
+        background: #e8f5e8;
+        color: #2e7d32;
+      }
+
+      .priority-medium {
+        background: #e3f2fd;
+        color: #1565c0;
+      }
+
+      .priority-high {
+        background: #ffebee;
+        color: #c62828;
+      }
+
+      .priority-critical {
+        background: #ffe3e3;
+        color: #b71c1c;
+      }
+
+      .points {
+        background: #f3e5f5;
+        color: #7b1fa2;
+      }
+
+      .epic {
+        background: #fff3e0;
+        color: #e65100;
+      }
+
+      .status {
+        background: #eaf4ff;
+        color: #0b63c8;
+      }
+
+      .tags {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+
+      .tag {
+        background: var(--chip-bg);
+        color: var(--chip);
+        padding: 4px 8px;
+        border-radius: 8px;
+        font-size: 0.8rem;
+      }
+
+      .actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      .btn-sm {
+        padding: 6px 10px;
+        border-radius: 8px;
+        font-size: 0.85rem;
+      }
+
+      .kanban {
+        display: none;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+      }
+
+      @media (max-width: 900px) {
+        .kanban {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .col {
+        background: #f0f4f8;
+        border-radius: 14px;
+        padding: 12px;
+        min-height: 260px;
+        box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.05);
+      }
+
+      .col h3 {
+        margin-bottom: 10px;
+        color: #444;
+        text-transform: uppercase;
+        font-size: 1rem;
+        letter-spacing: 0.5px;
+      }
+
+      .droppable {
+        min-height: 220px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .draggable {
+        cursor: grab;
+      }
+
+      .draggable:active {
+        cursor: grabbing;
+      }
+
+      .kanban .story-card {
+        padding: 12px;
+      }
+
+      #col-backlog .story-card {
+        border-left-color: #4092ff;
+      }
+
+      #col-progress .story-card {
+        border-left-color: #f39c12;
+      }
+
+      #col-done .story-card {
+        border-left-color: #2ecc71;
+      }
+
+      .story-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+        gap: 16px;
+      }
+
+      @media (max-width: 900px) {
+        .story-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .empty {
+        text-align: center;
+        padding: 40px 12px;
+        color: var(--muted);
+      }
+
+      .action-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .toast {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 12px 16px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #51cf66, #40c057);
+        color: white;
+        font-weight: 700;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        z-index: 1005;
+        animation: slideIn 0.3s forwards;
+      }
+
+      @keyframes slideIn {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+
+      .modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+      }
+
+      .modal.active {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+.modal .content {
+  width: min(640px, 95vw);
+  max-height: 90vh;
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.18);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  animation: fadeIn 0.3s ease;
+}
+
+
+.modal .content h3 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #2563eb;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+
+      .modal.active .content {
+        transform: scale(1);
+        opacity: 1;
+      }
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.modal-header h3 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #2563eb;
+}
+
+.close-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background-color: #f3f4f6;
+  border: none;
+  color: #555;
+  font-size: 1.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.close-btn:hover {
+  background-color: #e5e7eb;
+  color: #111;
+}
+
+.modal .footer {
+  margin-top: auto;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid #eee;
+}
+
+      .modal h3 {
+        font-size: 1.5rem;
+        color: #4092ff;
+        margin-bottom: 0;
+      }
+
+      .modal .form-group {
+        margin-bottom: 12px;
+      }
+
+      .modal label {
+        font-size: 0.9rem;
+      }
+
+      #project-management {
+        margin-bottom: 20px;
+      }
+
+      .project-card {
+        padding: 10px 15px;
+        border: 1px solid #e1e5e9;
+        border-radius: 12px;
+        margin-top: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .project-card .project-title {
+        font-weight: 600;
+      }
+
+.edit-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-top: 15px;
+}
+      .edit-grid .form-group {
+        margin-bottom: 0;
+      }
+
+.edit-grid .span-2 {
+  grid-column: span 2;
+}
+
+.edit-grid label {
+  font-size: 0.85rem;
+  color: #555;
+  font-weight: 600;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.edit-grid input,
+.edit-grid textarea,
+.edit-grid select {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  transition: border 0.2s, box-shadow 0.2s;
+}
+
+
+/* Inputs / selects / textarea */
+.edit-grid input,
+.edit-grid textarea,
+.edit-grid select {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  transition: border 0.2s, box-shadow 0.2s;
+  background: #fafafa;
+}
+
+.edit-grid input:focus,
+.edit-grid textarea:focus,
+.edit-grid select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+  background: #fff;
+}
+
+      .auth-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 80vh;
+      }
+
+      .auth-card {
+        width: 100%;
+        max-width: 420px;
+        padding: 40px 35px;
+        border-radius: 16px;
+        background: #fff;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        text-align: center;
+        animation: fadeIn 0.6s ease;
+      }
+
+      /* Title & subtitle */
+      .auth-card h2 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        margin-bottom: 6px;
+        color: #111;
+      }
+
+      .auth-card p {
+        font-size: 0.95rem;
+        color: #666;
+        margin-bottom: 25px;
+      }
+
+      /* Input group with floating label */
+      .input-group {
+        position: relative;
+        margin: 16px 0;
+      }
+
+      .input-group input {
+        width: 100%;
+        padding: 14px 12px;
+        border-radius: 10px;
+        border: 1px solid #ddd;
+        outline: none;
+        font-size: 1rem;
+        background: #fafafa;
+        color: #111;
+        transition: all 0.3s ease;
+      }
+
+      .input-group input:focus {
+        border-color: #2563eb;
+        background: #fff;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+      }
+
+      .input-group label {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 0.9rem;
+        color: #666;
+        pointer-events: none;
+        transition: 0.2s ease all;
+      }
+
+      .input-group input:focus+label,
+      .input-group input:not(:placeholder-shown)+label {
+        top: -8px;
+        font-size: 0.75rem;
+        color: #2563eb;
+        background: #fff;
+        padding: 0 4px;
+      }
+
+      #authSubmitBtn {
+        width: 100%;
+        padding: 14px;
+        border: none;
+        border-radius: 10px;
+        background: #2563eb;
+        color: #fff;
+        font-size: 1rem;
+        font-weight: 600;
+        margin-top: 15px;
+        cursor: pointer;
+        transition: all 0.25s ease;
+      }
+
+      #authSubmitBtn:hover {
+        background: #1e4ed8;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+      }
+
+      #authMessage {
+        color: #d9534f;
+        font-weight: bold;
+        margin-bottom: 10px;
+      }
+
+      /* Sidebar base */
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 240px;
+        height: 100%;
+        background: var(--card);
+        box-shadow: var(--shadow);
+        border-right: 1px solid #e1e5e9;
+        z-index: 1100;
+        padding: 20px 10px;
+        transition: left 0.3s ease;
+      }
+
+      .sidebar-header {
+        font-size: 1.3rem;
+        font-weight: bold;
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: #4092ff;
+      }
+
+      .sidebar ul {
+        list-style: none;
+        padding: 0;
+      }
+
+      .sidebar ul li {
+        margin: 12px 0;
+      }
+
+      .sidebar ul li button {
+        width: 100%;
+        text-align: left;
+        background: transparent;
+        border: none;
+        padding: 12px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text);
+        transition: all 0.2s ease;
+      }
+
+      /* Highlight active menu item */
+      .sidebar ul li button.active {
+        background: #4092ff;
+        color: #fff;
+      }
+
+      .sidebar ul li button:hover {
+        background: #f0f4f8;
+        color: #4092ff;
+      }
+
+      /* Desktop: sidebar always visible, content shifted */
+      @media (min-width: 900px) {
+
+        #appSection,
+        #authSection {
+          margin-left: 240px;
+        }
+
+        .hamburger {
+          display: none;
+        }
+
+        .sidebar {
+          left: 0 !important;
+        }
+
+        /* force open */
+        .close-btn {
+          display: none;
+        }
+      }
+
+      /* Mobile: sidebar hidden by default */
+      @media (max-width: 899px) {
+        .sidebar {
+          left: -260px;
+          /* hidden */
+        }
+
+        .sidebar.active {
+          left: 0;
+        }
+
+        .hamburger {
+          font-size: 1.5rem;
+          background: none;
+          border: none;
+          cursor: pointer;
+          margin-left: 10px;
+        }
+      }
+
+      .btn-gradient {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        background: linear-gradient(135deg, #d12844, #764ba2);
+        color: #fff;
+        font-weight: 600;
+        border: none;
+        padding: 12px 22px;
+        border-radius: 14px;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 6px 16px rgba(118, 75, 162, 0.25);
+      }
+
+      /* Ensure login/signup page is not pushed by sidebar */
+      #authSection {
+        margin-left: 0 !important;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background: #f4f6f9;
+        font-family: "Inter", sans-serif;
+        color: #111;
+        padding: 20px;
+      }
+
+      .btn-gradient:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(118, 75, 162, 0.35);
+      }
+
+      .btn-gradient span {
+        flex-grow: 1;
+        text-align: left;
+      }
+
+      /* Submenu styling */
+      .submenu {
+        display: none;
+        list-style: none;
+        padding-left: 15px;
+        margin-top: 5px;
+      }
+
+      .submenu li {
+        margin: 8px 0;
+      }
+
+      .submenu li button {
+        font-size: 0.95rem;
+        padding: 8px 12px;
+        background: transparent;
+      }
+
+      /* Parent menu */
+      .menu-parent {
+        font-weight: 600;
+      }
+
+      #authToggleBtn {
+        margin-top: 20px;
+        background: none;
+        border: none;
+        color: #2563eb;
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: color 0.2s;
+      }
+
+      #authToggleBtn:hover {
+        color: #1e4ed8;
+      }
+
+      /* Animations */
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+	  
+	  
+	  /* --- Modern Edit Modal Styles --- */
+#editModal .content {
+  width: min(640px, 95vw);
+  max-height: 90vh;
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 16px;   /* rounder card */
+  padding: 0;            /* remove old padding */
+  box-shadow: 0 12px 30px rgba(0,0,0,0.18);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  animation: fadeIn 0.25s ease;
+}
+
+/* Header with title + cross */
+#editModal .modal-header {
+  padding: 18px 22px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#editModal .modal-header h3 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #2563eb;
+  margin: 0;
+}
+
+#editModal .close-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: none;
+  background: #f3f4f6;
+  color: #555;
+  font-size: 1.3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+#editModal .close-btn:hover {
+  background: #e5e7eb;
+  color: #111;
+}
+
+/* Form area */
+#editModal form {
+  padding: 20px 22px;
+}
+
+#editModal .edit-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+#editModal .edit-grid .span-2 {
+  grid-column: span 2;
+}
+
+#editModal label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 6px;
+  display: block;
+}
+
+#editModal input,
+#editModal textarea,
+#editModal select {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #ddd;
+  border-radius: 12px;    /* consistent rounded corners */
+  font-size: 0.95rem;
+  background: #fafafa;
+  transition: all 0.2s;
+}
+#editModal input:focus,
+#editModal textarea:focus,
+#editModal select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+  background: #fff;
+}
+
+#editModal textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+/* Footer with buttons */
+#editModal .footer {
+  border-top: 1px solid #eee;
+  padding: 16px 22px;
+  background: #fafafa;
+  border-radius: 0 0 16px 16px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+    </style>
+  </head>
+  <body>
+    <div id="authSection" class="auth-container">
+      <div class="auth-card">
+        <h2 id="authTitle">Login</h2>
+        <p id="authPrompt">Log in to access User Story Tool and Project Management Tool.</p>
+        <div id="authMessage"></div>
+        <form id="authForm">
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" required />
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" required />
+          </div>
+          <button class="btn" type="submit" id="authButton">Login</button>
+        </form>
+        <button id="authToggleBtn" class="btn-ghost" style="margin-top: 15px;" onclick="toggleAuthMode()">Don't have an account? Sign Up</button>
+      </div>
+    </div>
+    <div id="appSection" style="display: none;">
+      <!-- Sidebar (Fixed) -->
+      <!-- Sidebar -->
+      <div id="sidebar" class="sidebar">
+<div class="sidebar-header" style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px;">
+  <!-- Left: logo + text -->
+  <div style="display:flex; align-items:center; gap:10px;">
+    <img src="InsightSuiteTransparent.png" 
+         alt="Menu Logo"
+         style="width:32px; height:32px; object-fit:contain;" />
+    <span style="color:#1e90ff; font-size:1.1rem; font-weight:600;">
+      Menu
+    </span>
+  </div>
+
+  <!-- Right: close button -->
+  <span class="close-btn" onclick="toggleSidebar()" 
+        style="cursor:pointer; font-size:1.4rem; color:#3b3937;">&times;</span>
+</div>
+
+        <ul>
+
+          <li>
+            <button onclick="switchView('list')">📚 List View</button>
+          </li>
+          <li>
+            <button onclick="switchView('board')">📌 Kanban View</button>
+          </li>
+          <!-- Export Group -->
+          <!-- Export -->
+          <li>
+            <button class="menu-parent" onclick="toggleSubmenu('exportSubmenu')">📤 Export Data ▸</button>
+            <ul id="exportSubmenu" class="submenu">
+              <li>
+                <button id="btnExportJSON">📝 Export JSON</button>
+              </li>
+              <li>
+                <button id="btnExportCSV">📑 Export CSV</button>
+              </li>
+              <li>
+                <button id="btnExportPDF">📄 Export PDF</button>
+              </li>
+            </ul>
+          </li>
+          <!-- Logout -->
+          <li>
+            <button id="logoutBtn">🔒 Logout</button>
+          </li>
+        </ul>
+      </div>
+      <div class="container">
+        <div class="header">
+          <div class="header-row">
+            <button class="hamburger" onclick="toggleSidebar()">☰</button>
+<div style="display:flex; align-items:center; gap:12px;">
+  <!-- Logo -->
+  <img src="InsightSuiteTransparent.png" 
+       alt="User Story Logo"
+       style="width:56px; height:56px; object-fit:contain;" />
+
+  <!-- Text block -->
+  <div>
+    <div style="color:#3b3937; font-size:1.25rem; font-weight:600;">
+      User Story Tool
+    </div>
+    <div style="color:var(--muted); font-size:.95rem; margin-top:4px;">
+      Create, manage, visualize (Kanban), export & autosave your agile user stories.
+    </div>
+  </div>
+</div>
+
+
+
+
+
+            <div class="controls">
+              <br>
+              <button class="btn btn-ghost" id="viewList">📚 List View</button>
+              <button class="btn btn-ghost" id="viewBoard">📌 Kanban View</button>
+            </div>
+          </div>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-number" id="totalStories">0</div>
+            <div class="stat-label">Total Stories</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="totalPoints">0</div>
+            <div class="stat-label">Story Points</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="totalEpics">0</div>
+            <div class="stat-label">Active Epics</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="progressPct">0%</div>
+            <div class="stat-label">Progress (Done)</div>
+          </div>
+        </div>
+        <div class="main-grid">
+          <div class="card">
+            <h2>📝 Create New Story</h2>
+            <form id="storyForm">
+              <div class="form-group">
+                <label for="project">Project</label>
+                <select id="project" required>
+                  <option value="">Select a Project</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="title">Story Title</label>
+                <input type="text" id="title" required placeholder="Enter a descriptive title" />
+              </div>
+              <div class="form-group">
+                <label for="userType">User Type</label>
+                <input type="text" id="userType" required placeholder="e.g., customer, admin" />
+              </div>
+              <div class="form-group">
+                <label for="action">I want to…</label>
+                <textarea id="action" required placeholder="Describe what the user wants to do"></textarea>
+              </div>
+              <div class="form-group">
+                <label for="benefit">So that…</label>
+                <textarea id="benefit" required placeholder="Describe the benefit or reason"></textarea>
+              </div>
+              <div class="form-group">
+                <label for="priority">Priority</label>
+                <select id="priority">
+                  <option>Low</option>
+                  <option selected>Medium</option>
+                  <option>High</option>
+                  <option>Critical</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="storyPoints">Story Points</label>
+                <input type="number" id="storyPoints" min="1" max="100" value="3" />
+              </div>
+              <div class="form-group">
+                <label for="epic">Epic (optional)</label>
+                <input type="text" id="epic" placeholder="Epic name" />
+              </div>
+              <div class="form-group">
+                <label for="tags">Tags (comma separated)</label>
+                <input type="text" id="tags" placeholder="UI, Backend, API" />
+              </div>
+              <div class="form-group">
+                <label for="acceptanceCriteria">Acceptance Criteria (one per line)</label>
+                <textarea id="acceptanceCriteria" placeholder="Given …\nWhen …\nThen …"></textarea>
+              </div>
+              <div class="form-group">
+                <label for="status">Initial Status</label>
+                <select id="status">
+                  <option>Backlog</option>
+                  <option>In Progress</option>
+                  <option>Done</option>
+                </select>
+              </div>
+              <button class="btn" type="submit">Create Story</button>
+            </form>
+          </div>
+          <div class="card">
+            <h2>📂 Project Management</h2>
+            <div id="project-list"></div>
+            <div class="action-group" style="margin-top: 15px;">
+              <input type="text" id="newProjectName" placeholder="New Project Name" />
+              <button class="btn" id="btnAddProject">Add Project</button>
+            </div>
+            <hr style="border: none; border-top: 1px solid #e1e5e9; margin: 20px 0;">
+            <h2>📊 Quick Actions</h2>
+            <div class="action-group">
+              <button class="btn btn-alt" id="btnSample">Load Sample Stories</button>
+              <button class="btn" id="btnClear">Clear All Stories</button>
+              <button class="btn btn-ghost" id="btnShowAll">Show All Stories</button>
+            </div>
+            <h2 style="margin-top:20px;">🔍 Filters</h2>
+            <div class="filters">
+              <input id="searchInput" placeholder="Search…" />
+              <select id="projectFilter">
+                <option value="">All Projects</option>
+              </select>
+              <select id="priorityFilter">
+                <option value="">All Priorities</option>
+                <option>Low</option>
+                <option>Medium</option>
+                <option>High</option>
+                <option>Critical</option>
+              </select>
+              <select id="epicFilter">
+                <option value="">All Epics</option>
+              </select>
+              <select id="statusFilter">
+                <option value="">All Statuses</option>
+                <option>Backlog</option>
+                <option>In Progress</option>
+                <option>Done</option>
+              </select>
+            </div>
+            <h2 style="margin-top:20px;">📄 Export</h2>
+            <div class="action-group">
+              <button class="btn" id="btnExportJSON">Export JSON</button>
+              <button class="btn" id="btnExportCSV">Export CSV</button>
+              <button class="btn" id="btnExportPDF">Export PDF</button>
+            </div>
+          </div>
+        </div>
+        <div class="card stories-container" id="listView">
+          <h2>📚 User Stories</h2>
+          <div id="storiesContainer" class="story-grid"></div>
+        </div>
+        <div class="card" id="boardView" style="display:none;">
+          <h2>📌 Kanban Board</h2>
+          <div class="kanban" id="kanban">
+            <div class="col" data-col="Backlog">
+              <h3>Backlog</h3>
+              <div class="droppable" id="col-backlog"></div>
+            </div>
+            <div class="col" data-col="In Progress">
+              <h3>In Progress</h3>
+              <div class="droppable" id="col-progress"></div>
+            </div>
+            <div class="col" data-col="Done">
+              <h3>Done</h3>
+              <div class="droppable" id="col-done"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+<div class="modal" id="editModal">
+  <div class="content">
+    <div class="modal-header">
+      <h3>✏️ Edit Story</h3>
+      <button class="close-btn" onclick="closeModal('editModal')">&times;</button>
+    </div>
+
+    <form id="editForm">
+      <input type="hidden" id="editId" />
+
+      <div class="edit-grid">
+        <div class="form-group span-2">
+          <label>Project</label>
+          <select id="editProject" required>
+            <option value="">Select a Project</option>
+          </select>
+        </div>
+
+        <div class="form-group span-2">
+          <label>Title</label>
+          <input id="editTitle" required />
+        </div>
+
+        <div class="form-group">
+          <label>User Type</label>
+          <input id="editUserType" required />
+        </div>
+
+        <div class="form-group">
+          <label>I want to…</label>
+          <textarea id="editAction" required></textarea>
+        </div>
+
+        <div class="form-group span-2">
+          <label>So that…</label>
+          <textarea id="editBenefit" required></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Priority</label>
+          <select id="editPriority">
+            <option>Low</option>
+            <option>Medium</option>
+            <option>High</option>
+            <option>Critical</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Story Points</label>
+          <input type="number" id="editPoints" min="1" max="100" />
+        </div>
+
+        <div class="form-group span-2">
+          <label>Epic</label>
+          <input id="editEpic" />
+        </div>
+
+        <div class="form-group">
+          <label>Status</label>
+          <select id="editStatus">
+            <option>Backlog</option>
+            <option>In Progress</option>
+            <option>Done</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Tags</label>
+          <input id="editTags" placeholder="comma separated" />
+        </div>
+
+        <div class="form-group span-2">
+          <label>Acceptance Criteria</label>
+          <textarea id="editAC"></textarea>
+        </div>
+      </div>
+
+      <div class="footer">
+        <button type="button" class="btn btn-ghost" onclick="closeModal('editModal')">Cancel</button>
+        <button class="btn" type="submit">💾 Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+
+    <div class="modal" id="detailsModal">
+      <div class="content">
+        <h3 id="detailsTitle"></h3>
+        <div style="color: var(--muted); font-size: 0.9em; margin-bottom: 12px;" id="detailsId"></div>
+        <p id="detailsStoryText" style="margin-bottom: 12px;"></p>
+        <div id="detailsMeta" class="meta" style="margin-bottom: 12px;"></div>
+        <div id="detailsTags" class="tags"></div>
+        <div id="detailsAC" style="margin-top: 15px;"></div>
+        <div class="footer">
+          <button type="button" class="btn btn-ghost" onclick="closeModal('detailsModal')">Close</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal" id="confirmModal">
+      <div class="content">
+        <div id="confirmText" style="margin-bottom:12px; font-weight:600;">Are you sure?</div>
+        <div class="footer">
+          <button class="btn btn-ghost" id="confirmNo">No</button>
+          <button class="btn btn-danger" id="confirmYes">Yes, Delete</button>
+        </div>
+      </div>
+    </div>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script>
+      function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('active');
+      }
+
+      function toggleSubmenu(id) {
+        const submenu = document.getElementById(id);
+        submenu.style.display = submenu.style.display === "block" ? "none" : "block";
+      }
+      // YOUR FIREBASE CONFIGURATION GOES HERE
+      // Replace with your project's object from Firebase Project Settings
+      const firebaseConfig = {
+        apiKey: "AIzaSyDZFm9WXz_LABJa__yzKcFFwc2fOM4_1Kk",
+        authDomain: "user-story-pro.firebaseapp.com",
+        projectId: "user-story-pro",
+        storageBucket: "user-story-pro.firebasestorage.app",
+        messagingSenderId: "70670384552",
+        appId: "1:70670384552:web:8920a6a539e1f8fca1319d",
+        measurementId: "G-5LJKY55SNF"
+      };
+      // Initialize Firebase
+      firebase.initializeApp(firebaseConfig);
+      const auth = firebase.auth();
+      const db = firebase.firestore();
+      // ===== State and Helpers =====
+      let userStories = [];
+      let projects = [];
+      let pendingDeleteId = null;
+      let currentView = 'list';
+      let currentUser = null;
+      const el = (id) => document.getElementById(id);
+      const priorityClass = (p) => ({
+        Low: 'priority-low',
+        Medium: 'priority-medium',
+        High: 'priority-high',
+        Critical: 'priority-critical'
+      } [p] || 'priority-medium');
+
+      function escapeHTML(str) {
+        return (str == null ? '' : String(str)).replace(/[&<>"]+/g, s => ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          "\"": "&quot;"
+        } [s]));
+      }
+
+      function toast(msg) {
+        const t = document.createElement('div');
+        t.className = 'toast';
+        t.textContent = `✅ ${msg}`;
+        document.body.appendChild(t);
+        setTimeout(() => {
+          t.style.opacity = '0';
+          t.style.transform = 'translateY(-6px)';
+          setTimeout(() => t.remove(), 300);
+        }, 1600);
+      }
+      // Generates a short acronym for a project name (e.g., 'Canteen Ordering System' -> 'COS')
+      function getProjectAcronym(projectName) {
+        if (!projectName) return '';
+        const words = projectName.split(/\s+/).filter(Boolean);
+        if (words.length <= 1) return projectName.substring(0, 3).toUpperCase();
+        return words.map(word => word[0].toUpperCase()).join('');
+      }
+      // ===== AUTHENTICATION LOGIC =====
+      auth.onAuthStateChanged(user => {
+        if (user) {
+          currentUser = user;
+          el('authSection').style.display = 'none';
+          el('appSection').style.display = 'block';
+          loadUserData();
+        } else {
+          currentUser = null;
+          el('authSection').style.display = 'flex';
+          el('appSection').style.display = 'none';
+          userStories = [];
+          projects = [];
+          updateStats();
+        }
+      });
+      let isLoginMode = true; // track whether we are in login or signup
+      function toggleAuthMode() {
+        isLoginMode = !isLoginMode;
+        if (isLoginMode) {
+          // Login mode
+          document.getElementById("authTitle").innerText = "Login";
+          document.getElementById("authPrompt").innerText = "Log in to start using User Story Tool or Project Management Tool.";
+          document.getElementById("authToggleBtn").innerText = "Don't have an account? Sign Up";
+          document.getElementById("authConfirmPassword").style.display = "none"; // hide confirm password
+          document.getElementById("authSubmitBtn").innerText = "Login"; // ✅ update button
+        } else {
+          // Signup mode
+          document.getElementById("authTitle").innerText = "Sign Up";
+          document.getElementById("authPrompt").innerText = "Create your account to start managing stories.";
+          document.getElementById("authToggleBtn").innerText = "Already have an account? Log In";
+          document.getElementById("authConfirmPassword").style.display = "block"; // show confirm password
+          document.getElementById("authSubmitBtn").innerText = "Sign Up"; // ✅ update button
+        }
+      }
+      el('authForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = el('email').value;
+        const password = el('password').value;
+        el('authMessage').textContent = '';
+        try {
+          if (isLoginMode) {
+            await auth.signInWithEmailAndPassword(email, password);
+            toast('Logged in successfully!');
+          } else {
+            await auth.createUserWithEmailAndPassword(email, password);
+            toast('Account created successfully!');
+          }
+        } catch (error) {
+          el('authMessage').textContent = error.message;
+        }
+      });
+	  
+el('logoutBtn').addEventListener('click', async () => {
+  await auth.signOut();
+  toast('Logged out successfully!');
+  window.location.href = "chooser.html";
+});
+
+      // ===== FIREBASE CRUD FUNCTIONS =====
+      async function loadUserData() {
+        try {
+          const storiesRef = db.collection('stories').doc(currentUser.uid).collection('user_stories');
+          const projectsRef = db.collection('stories').doc(currentUser.uid).collection('projects');
+          const [storiesSnapshot, projectsSnapshot] = await Promise.all([storiesRef.get(), projectsRef.get()]);
+          userStories = storiesSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+          projects = projectsSnapshot.docs.map(doc => doc.id);
+          filterStories();
+          updateStats();
+          updateFilters();
+          toast('Data loaded!');
+          // Listen for real-time updates
+          storiesRef.onSnapshot(snapshot => {
+            userStories = snapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data()
+            }));
+            filterStories();
+            updateStats();
+            updateFilters();
+          });
+          projectsRef.onSnapshot(snapshot => {
+            projects = snapshot.docs.map(doc => doc.id);
+            updateFilters();
+          });
+        } catch (e) {
+          console.error("Error loading data:", e);
+          toast('Error loading data.');
+        }
+      }
+      async function addStory(data) {
+        try {
+          const projectAcronym = getProjectAcronym(data.project);
+          const counterRef = db.collection('stories').doc(currentUser.uid).collection('counters').doc(projectAcronym);
+          let newStoryId = '';
+          await db.runTransaction(async (transaction) => {
+            const counterDoc = await transaction.get(counterRef);
+            let nextId = 1;
+            if (counterDoc.exists) {
+              nextId = counterDoc.data().nextId;
+            }
+            newStoryId = `US-${projectAcronym}-${nextId}`;
+            const storyRef = db.collection('stories').doc(currentUser.uid).collection('user_stories').doc(newStoryId);
+            transaction.set(storyRef, {
+              ...data,
+              createdDate: new Date()
+            });
+            transaction.set(counterRef, {
+              nextId: nextId + 1
+            });
+          });
+          toast('Story created!');
+          return newStoryId;
+        } catch (e) {
+          console.error("Error adding story: ", e);
+          toast('Error creating story.');
+        }
+      }
+      async function updateStory(id, data) {
+        try {
+          await db.collection('stories').doc(currentUser.uid).collection('user_stories').doc(id).update(data);
+          toast('Story updated!');
+        } catch (e) {
+          console.error("Error updating story: ", e);
+          toast('Error updating story.');
+        }
+      }
+      async function deleteStory(id) {
+        try {
+          await db.collection('stories').doc(currentUser.uid).collection('user_stories').doc(id).delete();
+          toast('Story deleted!');
+        } catch (e) {
+          console.error("Error deleting story: ", e);
+          toast('Error deleting story.');
+        }
+      }
+      async function addProjectToDB(projectName) {
+        try {
+          const projectAcronym = getProjectAcronym(projectName);
+          const projectsRef = db.collection('stories').doc(currentUser.uid).collection('projects');
+          const countersRef = db.collection('stories').doc(currentUser.uid).collection('counters');
+          await db.runTransaction(async (transaction) => {
+            const projectDoc = await transaction.get(projectsRef.doc(projectName));
+            if (projectDoc.exists) {
+              throw new Error("Project already exists.");
+            }
+            transaction.set(projectsRef.doc(projectName), {
+              acronym: projectAcronym
+            });
+            transaction.set(countersRef.doc(projectAcronym), {
+              nextId: 1
+            });
+          });
+          toast('Project added!');
+        } catch (e) {
+          console.error("Error adding project:", e);
+          toast(`Error adding project: ${e.message}`);
+        }
+      }
+      async function deleteProjectFromDB(projectName) {
+        try {
+          const storiesToDelete = userStories.filter(s => s.project === projectName);
+          const batch = db.batch();
+          const projectAcronym = getProjectAcronym(projectName);
+          // Delete all stories associated with the project
+          storiesToDelete.forEach(s => {
+            batch.delete(db.collection('stories').doc(currentUser.uid).collection('user_stories').doc(s.id));
+          });
+          // Delete the project and its counter
+          batch.delete(db.collection('stories').doc(currentUser.uid).collection('projects').doc(projectName));
+          batch.delete(db.collection('stories').doc(currentUser.uid).collection('counters').doc(projectAcronym));
+          await batch.commit();
+          toast('Project and its stories deleted!');
+        } catch (e) {
+          console.error("Error deleting project:", e);
+          toast('Error deleting project.');
+        }
+      }
+      // ===== UI and rendering functions (mostly the same) =====
+      function storyCardHTML(s) {
+        const cardHTML = `
+        
+					<div class="story-title">${escapeHTML(s.title)}</div>
+					<div class="story-id">${s.id}</div>
+					<div class="meta">
+						<span class="badge ${priorityClass(s.priority)}">${s.priority}</span>
+						<span class="badge points">${s.storyPoints} pts</span>
+          ${s.epic ? `
+						<span class="badge epic">${escapeHTML(s.epic)}</span>` : ''}
+          
+						<span class="badge status">${s.status}</span>
+					</div>
+        ${s.tags?.length ? `
+					<div class="tags" style="margin-top: 8px;">${s.tags.map(t => `
+						<span class="tag">${escapeHTML(t)}</span>`).join('')}
+					</div>` : ''}
+      `;
+        return cardHTML;
+      }
+
+      function displayStories(list) {
+        const cont = el('storiesContainer');
+        if (!list.length) {
+          cont.innerHTML = `
+					<div class="empty">No stories found.</div>`;
+          return;
+        }
+        cont.innerHTML = list.map(s => `
+        
+					<div class="story-card" data-id="${s.id}" onclick="openDetails('${s.id}')">
+          ${storyCardHTML(s)}
+          
+						<div class="story-text">As a 
+							<strong>${escapeHTML(s.userType)}</strong>, I want 
+							<strong>${escapeHTML(s.action)}</strong> so that 
+							<strong>${escapeHTML(s.benefit)}</strong>.
+						</div>
+						<div class="actions" onclick="event.stopPropagation();">
+							<button class="btn btn-sm" onclick="openEdit('${s.id}')">✏️ Edit</button>
+							<button class="btn btn-sm btn-danger" onclick="confirmDelete('${s.id}')">🗑️ Delete</button>
+						</div>
+					</div>
+      `).join('');
+      }
+
+      function renderKanban(list) {
+        const cols = {
+          Backlog: el('col-backlog'),
+          'In Progress': el('col-progress'),
+          Done: el('col-done')
+        };
+        Object.values(cols).forEach(c => c.innerHTML = '');
+        list.forEach(s => {
+          const div = document.createElement('div');
+          div.className = 'story-card draggable';
+          div.setAttribute('draggable', 'true');
+          div.dataset.id = s.id;
+          div.innerHTML = storyCardHTML(s);
+          div.onclick = () => openDetails(s.id);
+          if (cols[s.status]) {
+            cols[s.status].appendChild(div);
+          } else {
+            cols['Backlog'].appendChild(div);
+          }
+        });
+        el('kanban').style.display = 'grid';
+        el('storiesContainer').innerHTML = '';
+        document.querySelectorAll('.draggable').forEach(d => {
+          d.addEventListener('dragstart', e => {
+            e.dataTransfer.setData('id', d.dataset.id);
+          });
+        });
+        document.querySelectorAll('.droppable').forEach(zone => {
+          zone.addEventListener('dragover', e => e.preventDefault());
+          zone.addEventListener('drop', e => {
+            e.preventDefault();
+            const id = e.dataTransfer.getData('id');
+            const story = userStories.find(s => s.id === id);
+            if (!story) return;
+            let dropTarget = e.target;
+            while (dropTarget && !dropTarget.classList.contains('droppable')) {
+              dropTarget = dropTarget.parentElement;
+            }
+            if (dropTarget) {
+              const newStatus = dropTarget.parentElement.dataset.col;
+              updateStory(id, {
+                status: newStatus
+              });
+            }
+          });
+        });
+      }
+
+      function updateStats() {
+        const total = userStories.length;
+        const points = userStories.reduce((a, b) => a + (b.storyPoints || 0), 0);
+        const epics = new Set(userStories.filter(s => s.epic).map(s => s.epic)).size;
+        const done = userStories.filter(s => s.status === "Done").length;
+        el('totalStories').textContent = total;
+        el('totalPoints').textContent = points;
+        el('totalEpics').textContent = epics;
+        el('progressPct').textContent = total ? `${Math.round((done / total) * 100)}%` : "0%";
+      }
+
+function updateFilters() {
+  const epicSel = el('epicFilter');
+  const epics = [...new Set(userStories.filter(s => s.epic).map(s => s.epic))];
+  epicSel.innerHTML = '<option value="">All Epics</option>' +
+    epics.map(e => `<option>${escapeHTML(e)}</option>`).join('');
+
+  const projectSel = el('projectFilter');
+  const createProjectSel = el('project');
+  const editProjectSel = el('editProject');
+  const projectListEl = el('project-list');
+
+  projectSel.innerHTML = '<option value="">All Projects</option>' +
+    projects.map(p => `<option value="${p}">${escapeHTML(p)}</option>`).join('');
+
+  createProjectSel.innerHTML = '<option value="">Select a Project</option>' +
+    projects.map(p => `<option value="${p}">${escapeHTML(p)}</option>`).join('');
+
+  editProjectSel.innerHTML = '<option value="">Select a Project</option>' +
+    projects.map(p => `<option value="${p}">${escapeHTML(p)}</option>`).join('');
+
+  projectListEl.innerHTML = projects.map(p => `
+    <div class="project-card">
+      <span class="project-title">${escapeHTML(p)}</span>
+      <button class="btn btn-sm btn-danger" onclick="deleteProject('${p}')">🗑️</button>
+    </div>
+  `).join('');
+}
+
+
+      function getFilteredStories() {
+        const p = el('priorityFilter').value;
+        const e = el('epicFilter').value;
+        const s = el('statusFilter').value;
+        const pr = el('projectFilter').value;
+        const q = el('searchInput').value.trim().toLowerCase();
+        let list = [...userStories];
+        if (p) list = list.filter(x => x.priority === p);
+        if (e) list = list.filter(x => x.epic === e);
+        if (s) list = list.filter(x => x.status === s);
+        if (pr) list = list.filter(x => x.project === pr);
+        if (q) list = list.filter(x => [x.title, x.userType, x.action, x.benefit, (x.tags || []).join(',')].some(v => (v || '').toLowerCase().includes(q)));
+        return list;
+      }
+
+      function filterStories() {
+        const list = getFilteredStories();
+        if (currentView === 'list') {
+          el('listView').style.display = 'block';
+          el('boardView').style.display = 'none';
+          displayStories(list);
+        } else {
+          el('listView').style.display = 'none';
+          el('boardView').style.display = 'block';
+          renderKanban(list);
+        }
+      }
+
+      function switchView(view) {
+        currentView = view;
+        // Existing button highlights (top controls)
+        el('viewList').classList.remove('btn-active');
+        el('viewBoard').classList.remove('btn-active');
+        if (view === 'list') {
+          el('viewList').classList.add('btn-active');
+        } else {
+          el('viewBoard').classList.add('btn-active');
+        }
+        // 🔥 New: Sidebar menu highlight
+        document.querySelectorAll('#sidebar ul li button').forEach(btn => btn.classList.remove('active'));
+        if (view === 'list') {
+          document.querySelector('#sidebar ul li button[onclick*="list"]').classList.add('active');
+        } else if (view === 'board') {
+          document.querySelector('#sidebar ul li button[onclick*="board"]').classList.add('active');
+        }
+        filterStories();
+      }
+
+      function openEdit(id) {
+        const s = userStories.find(x => x.id === id);
+        if (!s) return;
+        el('editId').value = s.id;
+        el('editProject').value = s.project || '';
+        el('editTitle').value = s.title;
+        el('editUserType').value = s.userType;
+        el('editAction').value = s.action;
+        el('editBenefit').value = s.benefit;
+        el('editPriority').value = s.priority;
+        el('editPoints').value = s.storyPoints;
+        el('editEpic').value = s.epic || '';
+        el('editTags').value = (s.tags || []).join(', ');
+        el('editStatus').value = s.status;
+        el('editAC').value = (s.acceptanceCriteria || []).join('\n');
+        showModal('editModal');
+      }
+
+      function openDetails(id) {
+        const s = userStories.find(x => x.id === id);
+        if (!s) return;
+        el('detailsTitle').textContent = s.title;
+        el('detailsId').textContent = s.id;
+        el('detailsStoryText').innerHTML = `As a 
+					<strong>${escapeHTML(s.userType)}</strong>, I want 
+					<strong>${escapeHTML(s.action)}</strong> so that 
+					<strong>${escapeHTML(s.benefit)}</strong>.`;
+        let metaHTML = `
+					<span class="badge ${priorityClass(s.priority)}">${s.priority}</span>
+					<span class="badge points">${s.storyPoints} pts</span>
+        ${s.epic ? `
+					<span class="badge epic">${escapeHTML(s.epic)}</span>` : ''}
+        
+					<span class="badge status">${s.status}</span>`;
+        el('detailsMeta').innerHTML = metaHTML;
+        let tagsHTML = s.tags?.length ? `
+					<strong>Tags:</strong> ${s.tags.map(t => `
+					<span class="tag">${escapeHTML(t)}</span>`).join('')}` : '';
+        el('detailsTags').innerHTML = tagsHTML;
+        let acHTML = s.acceptanceCriteria?.length ? `
+        
+					<div style="font-weight:700; font-size:.85rem; color:var(--muted); text-transform:uppercase; margin-bottom: 8px;">Acceptance Criteria</div>
+					<ul style="margin-left: 20px; list-style-type: disc;">
+          ${s.acceptanceCriteria.map(c => `
+						<li>${escapeHTML(c)}</li>`).join('')}
+        
+					</ul>` : '';
+        el('detailsAC').innerHTML = acHTML;
+        showModal('detailsModal');
+      }
+
+      function confirmDelete(id) {
+        pendingDeleteId = id;
+        el('confirmText').textContent = 'Delete this story permanently?';
+        showModal('confirmModal');
+      }
+
+      function showModal(id) {
+        el(id).style.display = 'flex';
+        setTimeout(() => el(id).classList.add('active'), 10);
+      }
+
+      function closeModal(id) {
+        el(id).classList.remove('active');
+        setTimeout(() => el(id).style.display = 'none', 300);
+      }
+
+      function confirmAction(text, onYes) {
+        pendingDeleteId = null;
+        el('confirmText').textContent = text;
+        showModal('confirmModal');
+        el('confirmYes').onclick = () => {
+          closeModal('confirmModal');
+          onYes && onYes();
+        }
+      }
+
+      function exportJSON() {
+        const filteredStories = getFilteredStories();
+        const blob = new Blob([JSON.stringify(filteredStories, null, 2)], {
+          type: 'application/json'
+        });
+        downloadBlob(blob, `user-stories-${new Date().toISOString().slice(0, 10)}.json`);
+      }
+
+      function exportCSV() {
+        const filteredStories = getFilteredStories();
+        const headers = ['ID', 'Project', 'Title', 'User Type', 'Action', 'Benefit', 'Priority', 'Points', 'Epic', 'Tags', 'Status', 'Acceptance Criteria', 'Created Date'];
+        const rows = filteredStories.map(s => [
+          s.id, s.project || '', s.title, s.userType, s.action, s.benefit, s.priority, s.storyPoints, s.epic || '', (s.tags || []).join('|'), s.status, (s.acceptanceCriteria || []).join(' ; '), new Date(s.createdDate).toLocaleString()
+        ].map(v => `"${String(v ?? '').replaceAll('"', '""')}"`).join(','));
+        const csv = [headers.join(','), ...rows].join('\n');
+        const blob = new Blob([csv], {
+          type: 'text/csv'
+        });
+        downloadBlob(blob, `user-stories-${new Date().toISOString().slice(0, 10)}.csv`);
+      }
+      async function exportPDF() {
+        const filteredStories = getFilteredStories();
+        try {
+          const doc = new window.jspdf.jsPDF();
+          let y = 20;
+          const margin = 20;
+          const pageWidth = doc.internal.pageSize.getWidth();
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(22);
+          doc.text('User Stories', margin, y);
+          doc.setFontSize(10);
+          doc.text(`Export Date: ${new Date().toLocaleDateString()}`, margin, y + 8);
+          y += 20;
+          for (const story of filteredStories) {
+            if (y + 100 > doc.internal.pageSize.height) {
+              doc.addPage();
+              y = 20;
+            }
+            doc.setFontSize(16);
+            doc.setFont('helvetica', 'bold');
+            doc.text(story.title, margin, y);
+            y += 8;
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(100);
+            doc.text(`ID: ${story.id} | Project: ${story.project || 'N/A'} | Status: ${story.status}`, margin, y);
+            y += 8;
+            doc.setTextColor(0);
+            const storyText = `As a ${story.userType}, I want to ${story.action}, so that ${story.benefit}.`;
+            const splitText = doc.splitTextToSize(storyText, pageWidth - (2 * margin));
+            doc.text(splitText, margin, y);
+            y += (splitText.length * 5) + 5;
+            const metadata = [`Priority: ${story.priority}`, `Points: ${story.storyPoints}`, story.epic ? `Epic: ${story.epic}` : '', story.tags?.length ? `Tags: ${story.tags.join(', ')}` : ''].filter(Boolean).join(' | ');
+            doc.setFontSize(10);
+            doc.text(metadata, margin, y);
+            y += 10;
+            if (story.acceptanceCriteria?.length) {
+              doc.setFontSize(12);
+              doc.setFont('helvetica', 'bold');
+              doc.text('Acceptance Criteria:', margin, y);
+              y += 5;
+              doc.setFontSize(10);
+              doc.setFont('helvetica', 'normal');
+              for (const ac of story.acceptanceCriteria) {
+                const bullet = `\u2022 ${ac}`;
+                const splitAc = doc.splitTextToSize(bullet, pageWidth - (2 * margin));
+                doc.text(splitAc, margin, y);
+                y += (splitAc.length * 5) + 2;
+              }
+            }
+            doc.setLineWidth(0.5);
+            doc.line(margin, y + 5, pageWidth - margin, y + 5);
+            y += 10;
+          }
+          doc.save(`user-stories-${new Date().toISOString().slice(0, 10)}.pdf`);
+          toast('PDF exported successfully!');
+        } catch (error) {
+          alert('An error occurred while exporting the PDF. Please check the console for more details.');
+          console.error('PDF Export Error:', error);
+        }
+      }
+
+      function downloadBlob(blob, name) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = name;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+      async function loadSampleData() {
+        const samples = [{
+          project: 'Website V1',
+          title: 'User Registration',
+          userType: 'new customer',
+          action: 'create an account with email and password',
+          benefit: 'I can save my preferences and track orders',
+          priority: 'High',
+          storyPoints: 3,
+          epic: 'User Management',
+          tags: ['Auth', 'UI'],
+          acceptanceCriteria: ['Given a valid email and strong password, When I submit, Then account is created', 'Given a duplicate email, When I submit, Then I see an error'],
+          status: 'Backlog'
+        }, {
+          project: 'Website V1',
+          title: 'Product Search',
+          userType: 'customer',
+          action: 'search products by name or category',
+          benefit: 'I can quickly find what I need',
+          priority: 'High',
+          storyPoints: 5,
+          epic: 'Catalog',
+          tags: ['Search', 'UX'],
+          acceptanceCriteria: ['Search supports partial match', 'Filters by price and rating'],
+          status: 'In Progress'
+        }, {
+          project: 'Website V1',
+          title: 'Shopping Cart',
+          userType: 'customer',
+          action: 'add items and modify quantities',
+          benefit: 'I can review before purchase',
+          priority: 'Critical',
+          storyPoints: 8,
+          epic: 'Shopping',
+          tags: ['Cart', 'Persistence'],
+          acceptanceCriteria: ['Items persist across sessions', 'Totals update instantly'],
+          status: 'In Progress'
+        }, {
+          project: 'Mobile App',
+          title: 'Payment Processing',
+          userType: 'customer',
+          action: 'pay for my order securely',
+          benefit: 'I can complete my purchase safely',
+          priority: 'Critical',
+          storyPoints: 13,
+          epic: 'Checkout',
+          tags: ['Payments', 'Security'],
+          acceptanceCriteria: ['Encrypt card data', 'Email receipt sent'],
+          status: 'Backlog'
+        }, {
+          project: 'Mobile App',
+          title: 'Order Tracking',
+          userType: 'customer',
+          action: 'track order status',
+          benefit: 'I know when to expect delivery',
+          priority: 'Medium',
+          storyPoints: 5,
+          epic: 'Orders',
+          tags: ['Tracking', 'Notifications'],
+          acceptanceCriteria: ['Status updates in real time', 'Show ETA'],
+          status: 'Done'
+        }, ];
+        // Clear all existing data before adding samples
+        await clearAllData();
+        const uniqueProjects = [...new Set(samples.map(s => s.project))];
+        for (const project of uniqueProjects) {
+          await addProjectToDB(project);
+        }
+        for (const story of samples) {
+          await addStory(story);
+        }
+        toast('Sample stories loaded!');
+      }
+      async function clearAllData() {
+        try {
+          const storiesRef = db.collection('stories').doc(currentUser.uid).collection('user_stories');
+          const projectsRef = db.collection('stories').doc(currentUser.uid).collection('projects');
+          const countersRef = db.collection('stories').doc(currentUser.uid).collection('counters');
+          const [storyDocs, projectDocs, counterDocs] = await Promise.all([storiesRef.get(), projectsRef.get(), countersRef.get()]);
+          const batch = db.batch();
+          storyDocs.forEach(doc => batch.delete(doc.ref));
+          projectDocs.forEach(doc => batch.delete(doc.ref));
+          counterDocs.forEach(doc => batch.delete(doc.ref));
+          await batch.commit();
+          toast('All data cleared successfully.');
+        } catch (e) {
+          console.error("Error clearing data:", e);
+          toast("Error clearing data.");
+        }
+      }
+      // ===== Event Wiring =====
+      document.addEventListener('DOMContentLoaded', () => {
+        el('viewList').addEventListener('click', () => switchView('list'));
+        el('viewBoard').addEventListener('click', () => switchView('board'));
+        el('btnShowAll').addEventListener('click', () => {
+          el('searchInput').value = '';
+          el('projectFilter').value = '';
+          el('priorityFilter').value = '';
+          el('epicFilter').value = '';
+          el('statusFilter').value = '';
+          filterStories();
+          toast('Filters cleared');
+        });
+        el('btnAddProject').addEventListener('click', () => {
+          const projectName = el('newProjectName').value.trim();
+          if (projectName) {
+            addProjectToDB(projectName);
+            el('newProjectName').value = '';
+          } else {
+            alert('Please enter a project name.');
+          }
+        });
+        el('newProjectName').addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            el('btnAddProject').click();
+          }
+        });
+        window.deleteProject = deleteProjectFromDB;
+        el('storyForm').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const data = {
+            project: el('project').value,
+            title: el('title').value.trim(),
+            userType: el('userType').value.trim(),
+            action: el('action').value.trim(),
+            benefit: el('benefit').value.trim(),
+            priority: el('priority').value,
+            storyPoints: parseInt(el('storyPoints').value),
+            epic: el('epic').value.trim(),
+            tags: el('tags').value.split(',').map(x => x.trim()).filter(Boolean),
+            acceptanceCriteria: el('acceptanceCriteria').value.split('\n').map(x => x.trim()).filter(Boolean),
+            status: el('status').value
+          };
+          if (!data.project) {
+            alert('Please select a project.');
+            return;
+          }
+          await addStory(data);
+          e.target.reset();
+          el('priority').value = 'Medium';
+          el('storyPoints').value = 3;
+          el('project').value = '';
+        });
+        ['projectFilter', 'priorityFilter', 'epicFilter', 'statusFilter', 'searchInput'].forEach(id => el(id).addEventListener('input', filterStories));
+        el('btnSample').addEventListener('click', () => {
+          confirmAction('Loading sample stories will remove all existing stories and projects. Are you sure you want to proceed?', loadSampleData);
+        });
+        el('btnClear').addEventListener('click', () => {
+          confirmAction('Clear ALL stories, projects, and counters? This cannot be undone.', clearAllData);
+        });
+        el('btnExportJSON').addEventListener('click', exportJSON);
+        el('btnExportCSV').addEventListener('click', exportCSV);
+        el('btnExportPDF').addEventListener('click', exportPDF);
+        el('editForm').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const id = el('editId').value;
+          const data = {
+            project: el('editProject').value,
+            title: el('editTitle').value.trim(),
+            userType: el('editUserType').value.trim(),
+            action: el('editAction').value.trim(),
+            benefit: el('editBenefit').value.trim(),
+            priority: el('editPriority').value,
+            storyPoints: parseInt(el('editPoints').value),
+            epic: el('editEpic').value.trim(),
+            tags: el('editTags').value.split(',').map(x => x.trim()).filter(Boolean),
+            status: el('editStatus').value,
+            acceptanceCriteria: el('editAC').value.split('\n').map(x => x.trim()).filter(Boolean)
+          };
+          closeModal('editModal');
+          await updateStory(id, data);
+        });
+        el('confirmNo').addEventListener('click', () => closeModal('confirmModal'));
+        el('confirmYes').addEventListener('click', () => {
+          if (pendingDeleteId) {
+            deleteStory(pendingDeleteId);
+            pendingDeleteId = null;
+            closeModal('confirmModal');
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

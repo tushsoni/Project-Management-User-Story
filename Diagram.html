@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diagram App</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f4f6f9;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    /* Top Navbar */
+    header {
+      background: #ffffff;
+      padding: 15px 25px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    header h1 {
+      font-size: 20px;
+      font-weight: 600;
+      color: #374151;
+      margin: 0;
+    }
+
+    .logout-btn {
+      padding: 10px 18px;
+      background: #2563eb;
+      color: white;
+      font-weight: 500;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 3px 6px rgba(37,99,235,0.2);
+    }
+
+    .logout-btn:hover {
+      background: #1e40af;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(37,99,235,0.25);
+    }
+
+    /* Embed container */
+    .iframe-container {
+      flex: 1;
+      margin: 15px;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+      background: white;
+    }
+
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <header>
+    <h1>Diagram Workspace</h1>
+    <button class="logout-btn" onclick="window.location.href='chooser.html'">
+      Switch Apps
+    </button>
+  </header>
+
+  <!-- Iframe Embed -->
+  <div class="iframe-container">
+    <iframe src="https://tushsoni.github.io/Diagram/src/main/webapp/"></iframe>
+  </div>
+</body>
+</html>

@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Root Cause Analysis Generator</title>
+
+<!-- UI libs -->
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<!-- Export libs -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+
+<style>
+  /* Base styles */
+  * { box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; background: linear-gradient(to bottom right, #f9fafb, #eef2f7); }
+  
+  /* Main container styles */
+  .container-main {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.05);
+    border: 1px solid rgba(0,0,0,0.05);
+  }
+  
+  /* Heading and text styles */
+  .gradient-text { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  
+  /* Section card styles */
+  .section-card { background: rgba(248, 250, 252, .8); backdrop-filter: blur(10px); border: 1px solid rgba(226, 232, 240, .5); }
+  
+  /* Input and button styles */
+  .modern-input { background: rgba(255, 255, 255, .9); border: 2px solid transparent; transition: .3s; }
+  .modern-input:focus { background: #fff; border-color: #667eea; box-shadow: 0 0 0 4px rgba(102, 126, 234, .1); outline: 0; }
+  .modern-button { border: 0; color: #fff; font-weight: 600; transition: .25s; cursor: pointer; }
+  .modern-button:hover { transform: translateY(-2px); box-shadow: 0 10px 25px -5px rgba(0,0,0,.25); }
+  .modern-button:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+  .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+  .btn-success { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+  .btn-danger { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+  .btn-ai{background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 100%)}
+  .btn-ai-secondary{background:linear-gradient(135deg,#3b82f6 0%,#06b6d4 100%)}
+  
+  /* Dynamic list item styles */
+  .dynamic-list-item { background: rgba(255, 255, 255, .7); border: 1px solid rgba(226, 232, 240, .5); border-radius: 12px; padding: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 1rem; }
+  
+  /* AI assistant styles */
+  .ai-container { background: rgba(238, 242, 255, .8); border: 1px solid rgba(129, 140, 248, .3); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+  .hidden { display: none !important; }
+  
+  /* Pop-up modal styles */
+  .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+  .modal-content { background-color: white; padding: 24px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2); width: 90%; max-width: 900px; max-height: 80%; display: flex; flex-direction: column; overflow: hidden; }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e5e7eb; padding-bottom: 12px; margin-bottom: 16px; }
+  .modal-body { overflow-y: auto; flex-grow: 1; padding: 1rem; border-radius: 8px; background-color: #f9fafb; }
+  .modal-footer { padding-top: 16px; border-top: 1px solid #e5e7eb; margin-top: 16px; text-align: right; }
+
+  /* Word Document Styling for export */
+  .word-doc-content { font-family: Arial, sans-serif; line-height: 1.6; color: #333; padding: 20mm; width: 100%; box-sizing: border-box; }
+  .word-doc-content h1 { font-size: 24pt; font-weight: bold; text-align: center; margin-bottom: 30px; }
+  .word-doc-content h2 { font-size: 18pt; font-weight: bold; margin-top: 40px; margin-bottom: 10px; border-bottom: 2px solid #ccc; padding-bottom: 5px; }
+  .word-doc-content p { font-size: 11pt; margin-bottom: 10px; }
+  .word-doc-content ul { font-size: 11pt; margin-bottom: 10px; padding-left: 20px; }
+  .word-doc-content li { margin-bottom: 5px; }
+
+  /* PDF Styles - Used to generate a temporary, hidden div for html2canvas */
+  .pdf-content { font-family: 'Inter', sans-serif; line-height: 1.6; max-width: 210mm; padding: 20mm; background: #fff; color: #222; word-wrap: break-word; overflow-wrap: break-word; }
+  .pdf-content h1 { font-size: 20pt; font-weight: 700; margin-bottom: 16px; text-align: center; }
+  .pdf-content h2 { font-size: 16pt; font-weight: 700; margin: 18px 0 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 3px; }
+  .pdf-content h3 { font-size: 14pt; font-weight: 700; margin: 14px 0 6px; }
+  .pdf-content p { margin: 0 0 8px; font-size: 12pt; }
+  .pdf-content ul { margin: 0 0 10px 18px; }
+  .pdf-content li { margin: 0 0 6px; font-size: 12pt; }
+  .hidden-pdf-content { position: absolute; left: -9999px; }
+  
+.logout-btn {
+  padding: 10px 18px;
+  background: #2563eb;
+  color: white;
+  font-weight: 500;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 3px 6px rgba(37,99,235,0.2);
+}
+
+.logout-btn:hover {
+  background: #1e40af;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(37,99,235,0.25);
+}
+
+</style>
+</head>
+<body>
+<div class="py-4 bg-white/90 sticky top-0 z-50 border-b border-slate-200">
+  <div class="max-w-6xl mx-auto px-6 flex items-center justify-between">
+    
+    <!-- Title with Logo -->
+    <div class="flex items-center gap-3">
+      <img src="InsightSuiteTransparent.png" alt="InsightSuite Logo" class="w-10 h-10 object-contain" />
+      <h1 class="text-3xl font-bold" style="color:#3b3937;">
+        Root Cause Analysis Generator
+      </h1>
+    </div>
+
+    <!-- Switch Apps Button -->
+    <button class="logout-btn" onclick="window.location.href='chooser.html'">
+      Switch Apps
+    </button>
+  </div>
+</div>
+
+
+
+  <div class="container-main max-w-6xl mx-auto my-8 p-8 glass-card rounded-3xl" id="rca-form">
+    <div class="text-center mb-10">
+      <p class="text-xl font-medium text-gray-800">
+        Create comprehensive Root Cause Analysis documents with <span class="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white px-2 py-1 rounded-md shadow">
+          AI Assistance
+        </span>
+      </p>
+    </div>
+
+    <!-- 1. Basic Information -->
+    <div class="section-card rounded-2xl p-8 mb-8">
+      <h2 class="text-2xl font-bold mb-6 gradient-text flex items-center">
+        <i class="fas fa-info-circle mr-3"></i> Basic Information
+      </h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-4">
+        <div>
+          <label for="title" class="block text-sm font-medium text-gray-700">Title of the Document</label>
+          <input type="text" id="title" class="modern-input mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2" placeholder="e.g., Q3 System Outage RCA">
+        </div>
+        <div>
+          <label for="incident-date" class="block text-sm font-medium text-gray-700">Date of Incident</label>
+          <input type="date" id="incident-date" class="modern-input mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+        </div>
+        <div>
+          <label for="analysis-date" class="block text-sm font-medium text-gray-700">Date of Analysis</label>
+          <input type="date" id="analysis-date" class="modern-input mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+        </div>
+        <div>
+          <label for="author" class="block text-sm font-medium text-gray-700">Author(s) / Owner(s)</label>
+          <input type="text" id="author" class="modern-input mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2" placeholder="e.g., John Doe, Jane Smith">
+        </div>
+        <div>
+          <label for="version" class="block text-sm font-medium text-gray-700">Version / Revision History</label>
+          <input type="text" id="version" class="modern-input mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2" placeholder="e.g., 1.0">
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Executive Summary (AI) -->
+    <div class="section-card rounded-2xl p-8 mb-8">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold gradient-text flex items-center">
+          <i class="fas fa-clipboard-list mr-3"></i> Executive Summary
+        </h2>
+        <div class="flex items-center space-x-3">
+          <label class="text-sm font-semibold text-gray-600" for="ai-executive-summary">AI Assistant</label>
+          <input id="ai-executive-summary" type="checkbox" class="w-5 h-5 text-purple-600 border-2 border-gray-300 rounded focus:ring-purple-500" />
+        </div>
+      </div>
+      <div id="ai-container-executive-summary" class="ai-container hidden">
+        <input id="ai-prompt-executive-summary" placeholder="Describe the incident briefly for AI to expand..." class="modern-input w-full px-4 py-3 rounded-xl border-0 mb-3" />
+        <button id="ai-btn-executive-summary" type="button" class="btn-ai modern-button w-full py-3 rounded-xl font-semibold">✨ Generate with AI</button>
+      </div>
+      <textarea id="executive-summary" rows="5" class="modern-input mt-4 block w-full rounded-md shadow-sm p-3" placeholder="Brief description of the problem, high-level impact, and key takeaways..."></textarea>
+    </div>
+
+    <!-- 3. Problem Statement (AI) -->
+    <div class="section-card rounded-2xl p-8 mb-8">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold gradient-text flex items-center">
+          <i class="fas fa-exclamation-triangle mr-3"></i> Problem Statement
+        </h2>
+        <div class="flex items-center space-x-3">
+          <label class="text-sm font-semibold text-gray-600" for="ai-problem-statement">AI Assistant</label>
+          <input id="ai-problem-statement" type="checkbox" class="w-5 h-5 text-purple-600 border-2 border-gray-300 rounded focus:ring-purple-500" />
+        </div>
+      </div>
+      <div id="ai-container-problem-statement" class="ai-container hidden">
+        <input id="ai-prompt-problem-statement" placeholder="Describe what went wrong, where and who was affected..." class="modern-input w-full px-4 py-3 rounded-xl border-0 mb-3" />
+        <button id="ai-btn-problem-statement" type="button" class="btn-ai modern-button w-full py-3 rounded-xl font-semibold">✨ Generate with AI</button>
+      </div>
+      <textarea id="problem-statement" rows="5" class="modern-input mt-4 block w-full rounded-md shadow-sm p-3" placeholder="Clear definition of what went wrong, when, where, and who was affected..."></textarea>
+    </div>
+
+    <!-- 4. Impact Analysis (AI) -->
+    <div class="section-card rounded-2xl p-8 mb-8">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold gradient-text flex items-center">
+          <i class="fas fa-chart-line mr-3"></i> Impact Analysis
+        </h2>
+        <div class="flex items-center space-x-3">
+          <label class="text-sm font-semibold text-gray-600" for="ai-impact-analysis">AI Assistant</label>
+          <input id="ai-impact-analysis" type="checkbox" class="w-5 h-5 text-purple-600 border-2 border-gray-300 rounded focus:ring-purple-500" />
+        </div>
+      </div>
+      <div id="ai-container-impact-analysis" class="ai-container hidden">
+        <input id="ai-prompt-impact-analysis" placeholder="Quantify downtime, customers affected, severity..." class="modern-input w-full px-4 py-3 rounded-xl border-0 mb-3" />
+        <button id="ai-btn-impact-analysis" type="button" class="btn-ai modern-button w-full py-3 rounded-xl font-semibold">✨ Generate with AI</button>
+      </div>
+      <textarea id="impact-analysis" rows="5" class="modern-input mt-4 block w-full rounded-md shadow-sm p-3" placeholder="Quantify the impact: downtime, number of customers, financial loss, severity..."></textarea>
+    </div>
+
+    <!-- 5. Timeline of Events (AI for list) -->
+    <div class="section-card rounded-2xl p-8 mb-8">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold gradient-text flex items-center">
+          <i class="fas fa-history mr-3"></i> Timeline of Events
+        </h2>
+		<!-- Disabling the AI Assistant
+        <div class="flex items-center space-x-3">
+          <label class="text-sm font-semibold text-gray-600" for="ai-timeline">AI Assistant</label>
+          <input id="ai-timeline" type="checkbox" class="w-5 h-5 text-purple-600 border-2 border-gray-300 rounded focus:ring-purple-500" />
+        </div>
+		-->
+      </div>
+      <div id="ai-container-timeline" class="ai-container hidden">
+        <input id="ai-prompt-timeline" placeholder="Provide a few key timestamps; AI will expand to a detailed timeline..." class="modern-input w-full px-4 py-3 rounded-xl border-0 mb-3" />
+        <button id="ai-btn-timeline" type="button" class="btn-ai modern-button w-full py-3 rounded-xl font-semibold">✨ Generate with AI</button>
+      </div>
+      <div id="timeline-list" class="space-y-4"></div>
+      <div class="mt-4 flex items-center space-x-4">
+        <input type="text" id="timeline-item-input" class="modern-input flex-grow rounded-md shadow-sm p-2" placeholder="e.g., 10:30 AM: Issue detected by monitoring system">
+        <button id="add-timeline-item" class="modern-button btn-primary py-2 px-4 rounded-lg">
+          <i class="fas fa-plus"></i> Add
+        </button>
+      </div>
+    </div>
+
+    <!-- 6. Immediate Actions Taken (AI) -->
+    <div class="section-card rounded-2xl p-8 mb-8">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold gradient-text flex-center">
+          <i class="fas fa-tools mr-3"></i> Immediate Actions Taken
+        </h2>
+        <div class="flex items-center space-x-3">
+          <label class="text-sm font-semibold text-gray-600" for="ai-immediate-actions">AI Assistant</label>
+          <input id="ai-immediate-actions" type="checkbox" class="w-5 h-5 text-purple-600 border-2 border-gray-300 rounded focus:ring-purple-500" />
+        </div>
+      </div>
+      <div id="ai-container-immediate-actions" class="ai-container hidden">
+        <input id="ai-prompt-immediate-actions" placeholder="Summarize urgent fixes/workarounds..." class="modern-input w-full px-4 py-3 rounded-xl border-0 mb-3" />
+        <button id="ai-btn-immediate-actions" type="button" class="btn-ai modern-button w-full py-3 rounded-xl font-semibold">✨ Generate with AI</button>
+      </div>
+      <textarea id="immediate-actions" rows="5" class="modern-input mt-4 block w-full rounded-md shadow-sm p-3" placeholder="Describe the quick fixes and workarounds applied to restore service..."></textarea>
+    </div>
+    
+    <!-- 7. Root Cause Analysis (AI) -->
+    <div class="section-card rounded-2xl p-8 mb-8">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold gradient-text flex items-center">
+          <i class="fas fa-microscope mr-3"></i> Root Cause Analysis
+        </h2>
+        <div class="flex items-center space-x-3">
+          <label class="text-sm font-semibold text-gray-600" for="ai-root-cause-analysis">AI Assistant</label>
+          <input id="ai-root-cause-analysis" type="checkbox" class="w-5 h-5 text-purple-600 border-2 border-gray-300 rounded focus:ring-purple-500" />
+        </div>
+      </div>
+      <div id="ai-container-root-cause-analysis" class="ai-container hidden">
+        <input id="ai-prompt-root-cause-analysis" placeholder="Describe suspected causes; AI will structure 5 Whys / Fishbone style..." class="modern-input w-full px-4 py-3 rounded-xl border-0 mb-3" />
+        <button id="ai-btn-root-cause-analysis" type="button" class="btn-ai modern-button w-full py-3 rounded-xl font-semibold">✨ Generate with AI</button>
+      </div>
+      <textarea id="root-cause-analysis" rows="5" class="modern-input mt-4 block w-full rounded-md shadow-sm p-3" placeholder="Identify the root cause(s) and contributing factors..."></textarea>
+    </div>
+
+    <!-- 8. Corrective Actions (AI list) -->
+    <div class="section-card rounded-2xl p-8 mb-8">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold gradient-text flex items-center">
+          <i class="fas fa-check-circle mr-3"></i> Corrective Actions
+        </h2>
+		<!-- Disabling the AI Assistant
+        <div class="flex items-center space-x-3">
+          <label class="text-sm font-semibold text-gray-600" for="ai-corrective-actions">AI Assistant</label>
+          <input id="ai-corrective-actions" type="checkbox" class="w-5 h-5 text-purple-600 border-2 border-gray-300 rounded focus:ring-purple-500" />
+        </div>
+		-->
+      </div>
+      <div id="ai-container-corrective-actions" class="ai-container hidden">
+        <input id="ai-prompt-corrective-actions" placeholder="Outline fixes to address the root cause..." class="modern-input w-full px-4 py-3 rounded-xl border-0 mb-3" />
+        <button id="ai-btn-corrective-actions" type="button" class="btn-ai modern-button w-full py-3 rounded-xl font-semibold">✨ Generate with AI</button>
+      </div>
+      <div id="corrective-actions-list" class="list-container"></div>
+      <div class="mt-4 flex items-center space-x-4">
+        <input type="text" id="corrective-action-input" class="modern-input flex-grow rounded-md shadow-sm p-2" placeholder="e.g., Deploy hotfix for version 2.1.5 to production">
+        <button id="add-corrective-action" class="modern-button btn-primary py-2 px-4 rounded-lg">
+          <i class="fas fa-plus"></i> Add
+        </button>
+      </div>
+    </div>
+    
+    <!-- 9. Preventive Measures (AI list) -->
+    <div class="section-card rounded-2xl p-8 mb-8">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold gradient-text flex items-center">
+          <i class="fas fa-shield-alt mr-3"></i> Preventive Measures
+        </h2>
+		<!-- Disabling the AI Assistant
+        <div class="flex items-center space-x-3">
+          <label class="text-sm font-semibold text-gray-600" for="ai-preventive-measures">AI Assistant</label>
+          <input id="ai-preventive-measures" type="checkbox" class="w-5 h-5 text-purple-600 border-2 border-gray-300 rounded focus:ring-purple-500" />
+        </div>
+		-->
+      </div>
+      <div id="ai-container-preventive-measures" class="ai-container hidden">
+        <input id="ai-prompt-preventive-measures" placeholder="Suggest changes to prevent recurrence..." class="modern-input w-full px-4 py-3 rounded-xl border-0 mb-3" />
+        <button id="ai-btn-preventive-measures" type="button" class="btn-ai modern-button w-full py-3 rounded-xl font-semibold">✨ Generate with AI</button>
+      </div>
+      <div id="preventive-measures-list" class="list-container"></div>
+      <div class="mt-4 flex items-center space-x-4">
+        <input type="text" id="preventive-measure-input" class="modern-input flex-grow rounded-md shadow-sm p-2" placeholder="e.g., Update monitoring thresholds for server CPU usage">
+        <button id="add-preventive-measure" class="modern-button btn-primary py-2 px-4 rounded-lg">
+          <i class="fas fa-plus"></i> Add
+        </button>
+      </div>
+    </div>
+    
+    <!-- 10. Lessons Learned (AI) -->
+    <div class="section-card rounded-2xl p-8 mb-8">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold gradient-text flex items-center">
+          <i class="fas fa-book-reader mr-3"></i> Lessons Learned
+        </h2>
+        <div class="flex items-center space-x-3">
+          <label class="text-sm font-semibold text-gray-600" for="ai-lessons-learned">AI Assistant</label>
+          <input id="ai-lessons-learned" type="checkbox" class="w-5 h-5 text-purple-600 border-2 border-gray-300 rounded focus:ring-purple-500" />
+        </div>
+      </div>
+      <div id="ai-container-lessons-learned" class="ai-container hidden">
+        <input id="ai-prompt-lessons-learned" placeholder="What went well/needs improvement; AI will summarize..." class="modern-input w-full px-4 py-3 rounded-xl border-0 mb-3" />
+        <button id="ai-btn-lessons-learned" type="button" class="btn-ai modern-button w-full py-3 rounded-xl font-semibold">✨ Generate with AI</button>
+      </div>
+      <textarea id="lessons-learned" rows="5" class="modern-input mt-4 block w-full rounded-md shadow-sm p-3" placeholder="What went well, what needs improvement, and key insights..."></textarea>
+    </div>
+
+    <!-- 11. Follow-Up Items (AI list) -->
+    <div class="section-card rounded-2xl p-8 mb-8">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold gradient-text flex items-center">
+          <i class="fas fa-tasks mr-3"></i> Follow-Up Items / Action Plan
+        </h2>
+		<!-- Disabling the AI Assistant
+        <div class="flex items-center space-x-3">
+          <label class="text-sm font-semibold text-gray-600" for="ai-follow-up">AI Assistant</label>
+          <input id="ai-follow-up" type="checkbox" class="w-5 h-5 text-purple-600 border-2 border-gray-300 rounded focus:ring-purple-500" />
+        </div>
+		-->
+      </div>
+      <div id="ai-container-follow-up" class="ai-container hidden">
+        <input id="ai-prompt-follow-up" placeholder="Outline owners/dates; AI will convert to an action list..." class="modern-input w-full px-4 py-3 rounded-xl border-0 mb-3" />
+        <button id="ai-btn-follow-up" type="button" class="btn-ai modern-button w-full py-3 rounded-xl font-semibold">✨ Generate with AI</button>
+      </div>
+      <div id="follow-up-list" class="list-container"></div>
+      <div class="mt-4 flex items-center space-x-4">
+        <input type="text" id="follow-up-item-input" class="modern-input flex-grow rounded-md shadow-sm p-2" placeholder="e.g., Schedule a follow-up meeting with the engineering team">
+        <button id="add-follow-up-item" class="modern-button btn-primary py-2 px-4 rounded-lg">
+          <i class="fas fa-plus"></i> Add
+        </button>
+      </div>
+    </div>
+    
+    <!-- 12. Supporting Evidence (AI list) -->
+    <div class="section-card rounded-2xl p-8 mb-8">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold gradient-text flex items-center">
+          <i class="fas fa-paperclip mr-3"></i> Supporting Evidence (Appendices)
+        </h2>
+		<!-- Disabling the AI Assistant
+        <div class="flex items-center space-x-3">
+          <label class="text-sm font-semibold text-gray-600" for="ai-appendices">AI Assistant</label>
+          <input id="ai-appendices" type="checkbox" class="w-5 h-5 text-purple-600 border-2 border-gray-300 rounded focus:ring-purple-500" />
+        </div>
+		-->
+      </div>
+      <div id="ai-container-appendices" class="ai-container hidden">
+        <input id="ai-prompt-appendices" placeholder="List logs, dashboards, screenshots..." class="modern-input w-full px-4 py-3 rounded-xl border-0 mb-3" />
+        <button id="ai-btn-appendices" type="button" class="btn-ai modern-button w-full py-3 rounded-xl font-semibold">✨ Generate with AI</button>
+      </div>
+      <div id="appendices-list" class="list-container"></div>
+      <div class="mt-4 flex items-center space-x-4">
+        <input type="text" id="appendices-item-input" class="modern-input flex-grow rounded-md shadow-sm p-2" placeholder="e.g., Server logs from 2024-07-25 10:00 to 11:00 UTC">
+        <button id="add-appendices-item" class="modern-button btn-primary py-2 px-4 rounded-lg">
+          <i class="fas fa-plus"></i> Add
+        </button>
+      </div>
+    </div>
+    
+    <!-- Review and Export -->
+    <div class="section-card rounded-2xl p-8 mb-8">
+      <h2 class="text-2xl font-bold mb-6 gradient-text flex items-center">
+        <i class="fas fa-file-export mr-3"></i> Review & Export
+      </h2>
+      <div class="flex space-x-4 mt-8 justify-center mb-6">
+        <button id="review-rca-btn" class="modern-button btn-success py-3 px-8 rounded-full text-lg shadow-lg">
+          <i class="fas fa-eye mr-2"></i> Review RCA
+        </button>
+      </div>
+    
+      <div class="flex space-x-4 mt-8 justify-center">
+        <button id="export-pdf-btn" class="modern-button btn-primary py-3 px-8 rounded-full text-lg shadow-lg">
+          <i class="fas fa-file-pdf mr-2"></i> Export to PDF
+        </button>
+		<button id="export-tabular-btn" class="modern-button btn-primary py-3 px-8 rounded-full text-lg shadow-lg">
+          <i class="fas fa-file-pdf mr-2"></i> Export Tabular PDF
+        </button>
+        <button id="export-word-btn" class="modern-button btn-primary py-3 px-8 rounded-full text-lg shadow-lg">
+          <i class="fas fa-file-word mr-2"></i> Export to Word
+        </button>
+		<button id="export-tabular-word-btn" class="modern-button btn-primary py-3 px-8 rounded-full text-lg shadow-lg">
+          <i class="fas fa-file-word mr-2"></i> Export Tabular Word
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RCA Review Pop-up Modal -->
+  <div id="rca-modal-overlay" class="modal-overlay hidden">
+    <div id="rca-modal-content" class="modal-content">
+      <div class="modal-header">
+        <h3 class="text-xl font-bold text-gray-800">Root Cause Analysis Review</h3>
+        <button id="rca-close-icon" class="text-gray-500 hover:text-gray-900 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body text-gray-700" id="rca-preview"></div>
+      <div class="modal-footer">
+        <button id="rca-close-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-full transition-colors">Close</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Hidden div to generate PDF content -->
+  <div id="pdf-content-generator" class="hidden-pdf-content"></div>
+
+<script>
+  window.jsPDF = window.jspdf.jsPDF;
+
+  /* -------------------- UI Helpers -------------------- */
+  const createListItem = (text, listId) => {
+    const li = document.createElement('li');
+    li.className = 'dynamic-list-item';
+    li.innerHTML = `
+      <span class="flex-grow">${text}</span>
+      <button class="remove-btn text-red-500 hover:text-red-700"><i class="fas fa-trash-alt"></i></button>`;
+    document.getElementById(listId).appendChild(li);
+    li.querySelector('.remove-btn').addEventListener('click', () => li.remove());
+  };
+
+const createTimelineItem = (text) => {
+  const li = document.createElement('li');
+  li.className = 'timeline-item mb-4 flex items-center justify-between';
+
+  // Text
+  const p = document.createElement('p');
+  p.className = 'text-gray-800';
+  p.textContent = text;
+  li.appendChild(p);
+
+  // Delete button
+  const delBtn = document.createElement('button');
+  delBtn.className = 'ml-3 text-red-500 hover:text-red-700';
+  delBtn.innerHTML = '<i class="fas fa-trash"></i>';
+  delBtn.title = 'Delete this item';
+  delBtn.addEventListener('click', () => li.remove());
+  li.appendChild(delBtn);
+
+  document.getElementById('timeline-list').appendChild(li);
+};
+
+  const getListContentAsHTML = (id, tag = 'ul', listStyle = 'list-style-type: disc; padding-left: 20px;') => {
+    const list = document.getElementById(id);
+    const items = Array.from(list.children).map(item => {
+      const span = item.querySelector('span');
+      const p = item.querySelector('p');
+      return `<li>${(span? span.textContent : p.textContent)}</li>`
+    }).join('');
+    return `<${tag} style="${listStyle}">${items}</${tag}>`;
+  };
+
+  /* -------------------- Document Generation Content -------------------- */
+  const getDocumentContent = () => {
+    const getContent = (id) => document.getElementById(id).value;
+    const getListContent = (id) => Array.from(document.getElementById(id).children).map(item => (item.querySelector('span')? item.querySelector('span').textContent : item.querySelector('p').textContent)).join('\n');
+
+    const content = [
+      { title: '1. Basic Information', text: `Title: ${getContent('title')}\nDate of Incident: ${getContent('incident-date')}\nDate of Analysis: ${getContent('analysis-date')}\nAuthor(s): ${getContent('author')}\nVersion: ${getContent('version')}` },
+      { title: '2. Executive Summary', text: getContent('executive-summary') },
+      { title: '3. Problem Statement', text: getContent('problem-statement') },
+      { title: '4. Impact Analysis', text: getContent('impact-analysis') },
+      { title: '5. Timeline of Events', text: getListContent('timeline-list') },
+      { title: '6. Immediate Actions Taken', text: getContent('immediate-actions') },
+      { title: '7. Root Cause Analysis', text: getContent('root-cause-analysis') },
+      { title: '8. Corrective Actions', text: getListContent('corrective-actions-list') },
+      { title: '9. Preventive Measures', text: getListContent('preventive-measures-list') },
+      { title: '10. Lessons Learned', text: getContent('lessons-learned') },
+      { title: '11. Follow-Up Items / Action Plan', text: getListContent('follow-up-list') },
+      { title: '12. Supporting Evidence (Appendices)', text: getListContent('appendices-list') }
+    ];
+
+    return content;
+  };
+
+  /* -------------------- Export to Word -------------------- */
+  const generateWordContent = () => {
+    const content = getDocumentContent();
+    let htmlContent = `<div class="word-doc-content">`;
+    htmlContent += `<h1>Root Cause Analysis: ${content[0].text.split('\n')[0].replace('Title: ', '')}</h1>`;
+
+    content.forEach(section => {
+      if (section.text) {
+        htmlContent += `<h2>${section.title}</h2>`;
+        if (section.title.includes('Corrective Actions') || section.title.includes('Preventive Measures') || section.title.includes('Follow-Up Items') || section.title.includes('Supporting Evidence')) {
+          htmlContent += `<ul style="list-style-type: disc; margin-left: 20px;">`;
+          section.text.split('\n').forEach(item => { if(item.trim() !== '') htmlContent += `<li>${item}</li>`; });
+          htmlContent += `</ul>`;
+} else if (section.title.includes('Timeline of Events')) {
+  htmlContent += `<ul style="list-style-type:none; padding-left:0;">`;
+  section.text.split('\n').forEach(item => { 
+    if(item.trim()) htmlContent += `<li style="padding-left:15px;">${item}</li>`; 
+  });
+  htmlContent += `</ul>`;
+        } else {
+          htmlContent += `<p>${section.text.replace(/\n/g, '<br>')}</p>`;
+        }
+      }
+    });
+    htmlContent += `</div>`;
+    return htmlContent;
+  };
+
+document.getElementById('export-word-btn').addEventListener('click', () => {
+  const content = getDocumentContent();
+
+  let htmlContent = `<div class="word-doc-content">`;
+  htmlContent += `<h1>Root Cause Analysis</h1>`;
+  htmlContent += `<p><strong>Title:</strong> ${content[0].text.split('\n')[0].replace('Title: ', '')}</p>`;
+
+  content.forEach(section => {
+    if (section.text) {
+      htmlContent += `<h2>${section.title}</h2>`;
+      if (section.title.includes('Corrective Actions') || section.title.includes('Preventive Measures') || section.title.includes('Follow-Up Items') || section.title.includes('Supporting Evidence')) {
+        htmlContent += `<ul>`;
+        section.text.split('\n').forEach(item => { if(item.trim()) htmlContent += `<li>${item}</li>`; });
+        htmlContent += `</ul>`;
+      } else if (section.title.includes('Timeline of Events')) {
+        htmlContent += `<ul style="list-style-type:none; padding-left:0;">`;
+        section.text.split('\n').forEach(item => { if(item.trim()) htmlContent += `<li style="padding-left:15px; position:relative;">• ${item}</li>`; });
+        htmlContent += `</ul>`;
+      } else {
+        htmlContent += `<p>${section.text.replace(/\n/g, '<br>')}</p>`;
+      }
+    }
+  });
+  htmlContent += `</div>`;
+
+  // Proper HTML wrapper for Word
+  const fullHtml = `
+    <html>
+      <head><meta charset="utf-8"></head>
+      <body>${htmlContent}</body>
+    </html>
+  `;
+
+  const blob = new Blob([fullHtml], { type: 'application/msword;charset=utf-8;' });
+  saveAs(blob, 'RCA_Document.doc');
+});
+
+
+/* -------------------- Export to PDF -------------------- */
+document.getElementById('export-pdf-btn').addEventListener('click', () => {
+  const content = getDocumentContent();
+
+  let htmlContent = `
+    <div style="font-family: Arial, sans-serif; line-height:1.6; color:#222; width:794px; box-sizing:border-box; padding:20px;">
+      <h1 style="text-align:center; font-size:22pt; font-weight:bold; margin-bottom:20px;">
+        Root Cause Analysis
+      </h1>
+  `;
+
+  content.forEach(section => {
+    if (section.text) {
+      htmlContent += `<h2 style="font-size:16pt; font-weight:bold; margin:18px 0 8px; border-bottom:1px solid #ccc; padding-bottom:3px;">
+        ${section.title}
+      </h2>`;
+
+      if (
+        section.title.includes('Corrective Actions') ||
+        section.title.includes('Preventive Measures') ||
+        section.title.includes('Follow-Up Items') ||
+        section.title.includes('Supporting Evidence')
+      ) {
+        htmlContent += `<ul style="margin-left:18px;">`;
+        section.text.split('\n').forEach(item => {
+          if (item.trim()) htmlContent += `<li style="font-size:12pt; margin-bottom:6px;">${item}</li>`;
+        });
+        htmlContent += `</ul>`;
+      } else if (section.title.includes('Timeline of Events')) {
+        htmlContent += `<ul style="list-style-type:none; padding-left:0;">`;
+        section.text.split('\n').forEach(item => {
+          if (item.trim()) htmlContent += `<li style="padding-left:15px; font-size:12pt; margin-bottom:6px;">${item}</li>`;
+        });
+        htmlContent += `</ul>`;
+      } else {
+        htmlContent += `<p style="font-size:12pt; margin-bottom:8px;">${section.text.replace(/\n/g, '<br>')}</p>`;
+      }
+    }
+  });
+
+  htmlContent += `</div>`;
+
+  // Temporary rendering container
+  const generatorDiv = document.createElement("div");
+  generatorDiv.innerHTML = htmlContent;
+  generatorDiv.style.position = "absolute";
+  generatorDiv.style.left = "-9999px"; 
+  document.body.appendChild(generatorDiv);
+
+  html2canvas(generatorDiv, { scale: 1.2 }).then(canvas => {  // smaller scale
+    const imgData = canvas.toDataURL("image/jpeg", 0.8); // use JPEG with compression
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF("p", "mm", "a4");
+
+    const imgWidth = 210; 
+    const pageHeight = 297;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+    let heightLeft = imgHeight;
+    let position = 0;
+
+    // Add first page
+    pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
+    heightLeft -= pageHeight;
+
+    // Add remaining pages (sliced instead of duplicating)
+    while (heightLeft > 0) {
+      position = heightLeft - imgHeight;
+      pdf.addPage();
+      pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+    }
+
+    pdf.save("RCA_Document.pdf");
+    generatorDiv.remove();
+  });
+});
+
+
+/* -------------------- Export Tabular PDF -------------------- */
+document.getElementById('export-tabular-btn').addEventListener('click', () => {
+  const content = getDocumentContent();
+
+  // Build table style RCA
+  let tableContent = `
+    <div style="font-family: Arial, sans-serif; width:794px; padding:20px; color:#222;">
+      <h1 style="text-align:center; font-size:20pt; margin-bottom:20px;">Root Cause Analysis</h1>
+      <table style="width:100%; border-collapse: collapse; font-size:11pt;">
+  `;
+
+  content.forEach(section => {
+    if (section.text) {
+      tableContent += `
+        <tr>
+          <td style="border:1px solid #ccc; padding:8px; font-weight:bold; width:30%;">${section.title}</td>
+          <td style="border:1px solid #ccc; padding:8px;">${section.text.replace(/\n/g, '<br>')}</td>
+        </tr>
+      `;
+    }
+  });
+
+  tableContent += `</table></div>`;
+
+  // Temporary div for rendering
+  const generatorDiv = document.createElement("div");
+  generatorDiv.innerHTML = tableContent;
+  generatorDiv.style.position = "absolute";
+  generatorDiv.style.left = "-9999px";
+  document.body.appendChild(generatorDiv);
+
+  html2canvas(generatorDiv, { scale: 1.2 }).then(canvas => {
+    const imgData = canvas.toDataURL("image/jpeg", 0.9);
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF("p", "mm", "a4");
+
+    const imgWidth = 210;
+    const pageHeight = 297;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+    let heightLeft = imgHeight;
+    let position = 0;
+
+    pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
+    heightLeft -= pageHeight;
+
+    while (heightLeft > 0) {
+      position = heightLeft - imgHeight;
+      pdf.addPage();
+      pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+    }
+
+    pdf.save("RCA_Tabular.pdf");
+    generatorDiv.remove();
+  });
+});
+
+
+
+/* -------------------- Export Tabular Word -------------------- */
+document.getElementById('export-tabular-word-btn').addEventListener('click', () => {
+  const content = getDocumentContent();
+
+  // Build tabular HTML for Word
+  let tableContent = `
+    <div class="word-doc-content">
+      <h1>Root Cause Analysis</h1> 
+      <table style="width:100%; border-collapse: collapse; font-size:11pt;" border="1" cellspacing="0" cellpadding="5">
+  `;
+
+  content.forEach(section => {
+    if (section.text) {
+      tableContent += `
+        <tr>
+          <td style="font-weight:bold; width:30%; vertical-align:top;">${section.title}</td>
+          <td>${section.text.replace(/\n/g, '<br>')}</td>
+        </tr>
+      `;
+    }
+  });
+
+  tableContent += `</table></div>`;
+
+  // Wrap for Word export
+  const fullHtml = `
+    <html>
+      <head><meta charset="utf-8"></head>
+      <body>${tableContent}</body>
+    </html>
+  `;
+
+  const blob = new Blob([fullHtml], { type: 'application/msword;charset=utf-8;' });
+  saveAs(blob, 'RCA_Tabular.doc');
+});
+
+
+
+  /* -------------------- Dynamic Lists -------------------- */
+document.getElementById('add-timeline-item').addEventListener('click', () => {
+  const input = document.getElementById('timeline-item-input');
+  if (input.value.trim()) {
+    createTimelineItem(input.value.trim());
+    input.value = '';
+  }
+});
+
+  document.getElementById('add-corrective-action').addEventListener('click', () => {
+    const input = document.getElementById('corrective-action-input');
+    if (input.value) { createListItem(input.value, 'corrective-actions-list'); input.value = ''; }
+  });
+
+  document.getElementById('add-preventive-measure').addEventListener('click', () => {
+    const input = document.getElementById('preventive-measure-input');
+    if (input.value) { createListItem(input.value, 'preventive-measures-list'); input.value = ''; }
+  });
+
+  document.getElementById('add-follow-up-item').addEventListener('click', () => {
+    const input = document.getElementById('follow-up-item-input');
+    if (input.value) { createListItem(input.value, 'follow-up-list'); input.value = ''; }
+  });
+  
+  document.getElementById('add-appendices-item').addEventListener('click', () => {
+    const input = document.getElementById('appendices-item-input');
+    if (input.value) { createListItem(input.value, 'appendices-list'); input.value = ''; }
+  });
+
+  /* -------------------- Review Modal -------------------- */
+  const rcaBtn = document.getElementById('review-rca-btn');
+  const rcaOverlay = document.getElementById('rca-modal-overlay');
+  const closeIcon = document.getElementById('rca-close-icon');
+  const closeBtn = document.getElementById('rca-close-btn');
+  const previewContainer = document.getElementById('rca-preview');
+
+  const buildPreviewHTML = () => {
+    const sections = getDocumentContent();
+    let html = `<div class='pdf-content'>`;
+    html += `<h1>${document.getElementById('title').value || 'Root Cause Analysis'}</h1>`;
+    sections.forEach(s => {
+      html += `<h2>${s.title}</h2>`;
+      if (s.title.includes('Corrective Actions') || s.title.includes('Preventive Measures') || s.title.includes('Follow-Up Items') || s.title.includes('Supporting Evidence')) {
+        html += getListContentAsHTML(
+          s.title.includes('Corrective') ? 'corrective-actions-list' : s.title.includes('Preventive') ? 'preventive-measures-list' : s.title.includes('Follow-Up') ? 'follow-up-list' : 'appendices-list'
+        );
+      } else if (s.title.includes('Timeline')) {
+        html += getListContentAsHTML('timeline-list', 'ul', 'list-style-type:none;padding-left:0;');
+      } else {
+        html += `<p>${s.text.replace(/\n/g,'<br>')}</p>`;
+      }
+    });
+    html += `</div>`;
+    return html;
+  };
+
+  rcaBtn.addEventListener('click', () => {
+    previewContainer.innerHTML = buildPreviewHTML();
+    rcaOverlay.classList.remove('hidden');
+  });
+  [closeIcon, closeBtn].forEach(el => el.addEventListener('click', () => rcaOverlay.classList.add('hidden')));
+
+  /* -------------------- AI helpers (mirrors BRD) -------------------- */
+  async function callAI(prompt, mode, targetId){
+    const generateBtn = document.getElementById(`ai-btn-${targetId}`);
+    const polishBtn = document.getElementById(`ai-polish-btn-${targetId}`);
+    const btn = mode === 'generate' ? generateBtn : polishBtn;
+
+    const originalText = btn.textContent;
+    btn.textContent = 'Processing...';
+    btn.disabled = true;
+
+    const apiKey = "AIzaSyAZ1r4t6nDffIOw4NcFnhOx3qJbNX7pECI"; // <- place your Gemini API key here (same as BRD)
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+    const instruction = mode === 'generate'
+      ? `Expand into clear, concise RCA paragraphs or bullets as appropriate. Use professional tone and structure.\n${prompt}`
+      : `Polish the following RCA text. Keep meaning, improve clarity and professionalism. Maintain format (bullets if bullets, paragraph if paragraph):\n${prompt}`;
+
+    try{
+      const res = await fetch(apiUrl,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({contents:[{parts:[{text:instruction}]}]})
+      });
+      const data = await res.json();
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+      const textarea = document.getElementById(targetId);
+      if (textarea) {
+        textarea.value = text.trim();
+      } else {
+        const map = {
+          'timeline':'timeline-list',
+          'corrective-actions':'corrective-actions-list',
+          'preventive-measures':'preventive-measures-list',
+          'follow-up':'follow-up-list',
+          'appendices':'appendices-list'
+        };
+        const listId = map[targetId];
+        if (listId){ setListFromAI(listId, text, targetId==='timeline'); }
+      }
+    }catch(e){
+      alert('AI error: ' + (e?.message || e));
+    }finally{
+      btn.textContent = originalText;
+      btn.disabled = false;
+    }
+  }
+
+  function setListFromAI(listId, text, isTimeline=false){
+    const lines = text.split(/\r?\n|•|-|\u2022/).map(s=>s.trim()).filter(s=>s.length>0);
+    const list = document.getElementById(listId);
+    list.innerHTML = '';
+    lines.forEach(line=>{ isTimeline ? createTimelineItem(line) : createListItem(line, listId); });
+  }
+
+  /* -------------------- Wire up AI controls (same pattern as BRD) -------------------- */
+  document.addEventListener('DOMContentLoaded',()=>{
+    const aiFields = [
+      // textareas
+      'executive-summary','problem-statement','impact-analysis','immediate-actions','root-cause-analysis','lessons-learned',
+      // lists
+      'timeline','corrective-actions','preventive-measures','follow-up','appendices'
+    ];
+
+    aiFields.forEach(fid=>{
+      const checkbox = document.getElementById(`ai-${fid}`);
+      const container = document.getElementById(`ai-container-${fid}`);
+      const promptInput = document.getElementById(`ai-prompt-${fid}`);
+      const genBtn = document.getElementById(`ai-btn-${fid}`);
+
+      if (checkbox && container){
+        checkbox.addEventListener('change',()=>container.classList.toggle('hidden',!checkbox.checked));
+      }
+
+      if (genBtn && promptInput){
+        const polishBtn = document.createElement('button');
+        polishBtn.type = 'button';
+        polishBtn.id = `ai-polish-btn-${fid}`;
+        polishBtn.className = 'btn-ai-secondary modern-button w-full py-3 rounded-xl font-semibold mt-2';
+        polishBtn.textContent = '📝 Polish with AI';
+        genBtn.insertAdjacentElement('afterend', polishBtn);
+
+        genBtn.addEventListener('click',()=>{
+          const seed = promptInput.value.trim();
+          if (!seed) return alert('Please enter a prompt.');
+          callAI(seed,'generate',fid);
+        });
+
+        polishBtn.addEventListener('click',()=>{
+          const textarea = document.getElementById(fid);
+          let seed = '';
+          if (textarea){
+            seed = textarea.value.trim();
+          }else{
+            const map = {
+              'timeline':'timeline-list',
+              'corrective-actions':'corrective-actions-list',
+              'preventive-measures':'preventive-measures-list',
+              'follow-up':'follow-up-list',
+              'appendices':'appendices-list'
+            };
+            const listId = map[fid];
+            if (listId){
+              const items = Array.from(document.getElementById(listId).children).map(el=>{
+                const span = el.querySelector('span');
+                const p = el.querySelector('p');
+                return (span? span.textContent : p.textContent).trim();
+              }).filter(Boolean);
+              seed = items.join('\n');
+            }
+          }
+          if (!seed) seed = promptInput.value.trim();
+          if (!seed) return alert('Please enter some text to polish.');
+          callAI(seed,'polish',fid);
+        });
+      }
+    });
+  });
+</script>
+</body>
+</html>

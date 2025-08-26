@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Business Requirement Document Generator</title>
+
+<!-- UI libs -->
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<!-- Export libs -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+
+<style>
+  *{box-sizing:border-box}
+ body {
+  background: linear-gradient(to bottom right, #f9fafb, #eef2f7);
+}
+
+.container {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.05);
+  border: 1px solid rgba(0,0,0,0.05);
+}
+.header {
+  background: linear-gradient(90deg, #6366f1, #8b5cf6, #ec4899);
+  color: white;
+  padding: 1.5rem;
+  font-size: 1.8rem;
+  font-weight: bold;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+  .glass-card{background:rgba(255,255,255,.95);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.2);box-shadow:0 25px 50px -12px rgba(0,0,0,.25)}
+  .gradient-text{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  .section-card{background:rgba(248,250,252,.8);backdrop-filter:blur(10px);border:1px solid rgba(226,232,240,.5)}
+  .modern-input{background:rgba(255,255,255,.9);border:2px solid transparent;transition:.3s}
+  .modern-input:focus{background:#fff;border-color:#667eea;box-shadow:0 0 0 4px rgba(102,126,234,.1);outline:0}
+  .modern-button{border:0;color:#fff;font-weight:600;transition:.25s;cursor:pointer}
+  .modern-button:hover{transform:translateY(-2px);box-shadow:0 10px 25px -5px rgba(0,0,0,.25)}
+  .modern-button:disabled{opacity:.6;cursor:not-allowed;transform:none}
+  .btn-primary{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%)}
+  .btn-success{background:linear-gradient(135deg,#10b981 0%,#059669 100%)}
+  .btn-danger{background:linear-gradient(135deg,#ef4444 0%,#dc2626 100%)}
+  .btn-ai{background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 100%)}
+  .btn-ai-secondary{background:linear-gradient(135deg,#3b82f6 0%,#06b6d4 100%)}
+  .dynamic-list-item{background:rgba(255,255,255,.7);border:1px solid rgba(226,232,240,.5);border-radius:12px;padding:16px;margin-bottom:12px;display:flex;align-items:center;gap:1rem}
+  .ai-container{background:rgba(238,242,255,.8);border:1px solid rgba(129,140,248,.3);border-radius:12px;padding:16px;margin-bottom:16px}
+  .hidden{display:none!important}
+
+  /* PDF-specific */
+  .pdf-content{font-family:Times, "Times New Roman", serif;line-height:1.6;max-width:210mm;padding:20mm;background:#fff;color:#222;word-wrap:break-word;overflow-wrap:break-word;hyphens:auto}
+  .pdf-content h1{font-size:20pt;font-weight:700;margin-bottom:16px;text-align:center;page-break-after:avoid}
+  .pdf-content h2{font-size:16pt;font-weight:700;margin:18px 0 8px;border-bottom:1px solid #e2e8f0;padding-bottom:3px;page-break-after:avoid}
+  .pdf-content h3{font-size:14pt;font-weight:700;margin:14px 0 6px;page-break-after:avoid}
+  .pdf-content p{margin:0 0 8px;text-align:justify;font-size:12pt}
+  .pdf-content ul{margin:0 0 10px 18px}
+  .pdf-content li{margin:0 0 6px;font-size:12pt}
+
+  /* Keep headings/lists together when possible */
+  h1,h2,h3,p,ul,li{page-break-inside:avoid}
+  h1:first-of-type,h2:first-of-type{page-break-before:auto}
+  @media (max-width:768px){.container-main{margin:1rem;padding:1.5rem}}
+  
+.logout-btn {
+  padding: 10px 18px;
+  background: #2563eb;
+  color: white;
+  font-weight: 500;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 3px 6px rgba(37,99,235,0.2);
+}
+
+.logout-btn:hover {
+  background: #1e40af;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(37,99,235,0.25);
+}
+</style>
+</head>
+<body>
+<div class="py-4 bg-white/90 sticky top-0 z-50 border-b border-slate-200">
+  <div class="max-w-6xl mx-auto px-6 flex items-center justify-between">
+    
+    <!-- Title with Logo -->
+    <div class="flex items-center gap-3">
+      <img src="InsightSuiteTransparent.png" alt="InsightSuite Logo" class="w-10 h-10 object-contain" />
+      <h1 class="text-3xl font-bold" style="color:#3b3937;">
+        Business Requirement Document Generator
+      </h1>
+    </div>
+
+    <!-- Switch Apps Button -->
+    <button class="logout-btn" onclick="window.location.href='chooser.html'">
+      Switch Apps
+    </button>
+  </div>
+</div>
+
+
+
+  <div class="container-main max-w-6xl mx-auto my-8 p-8 glass-card rounded-3xl" id="brd-form">
+    <div class="text-center mb-10">
+<p class="text-xl font-medium text-gray-800">
+  Create comprehensive Business Requirements Documents with 
+  <span class="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white px-2 py-1 rounded-md shadow">
+    AI Assistance
+  </span>
+</p>
+    </div>
+
+    <!-- Project Information -->
+    <div class="section-card rounded-2xl p-8 mb-8">
+      <h2 class="text-2xl font-bold mb-6 gradient-text flex items-center">
+        <span class="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mr-3">1</span>
+        Project Information
+      </h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="space-y-2">
+          <label class="block text-sm font-semibold text-gray-700" for="project-title">Project Title</label>
+          <input id="project-title" class="modern-input w-full px-4 py-3 rounded-xl border-0" placeholder="e.g., New CRM System Implementation" />
+        </div>
+        <div class="space-y-2">
+          <label class="block text-sm font-semibold text-gray-700" for="document-author">Document Author</label>
+          <input id="document-author" class="modern-input w-full px-4 py-3 rounded-xl border-0" placeholder="e.g., Jane Doe, Business Analyst" />
+        </div>
+        <div class="space-y-2">
+          <label class="block text-sm font-semibold text-gray-700" for="document-date">Document Date</label>
+          <input type="date" id="document-date" class="modern-input w-full px-4 py-3 rounded-xl border-0" />
+        </div>
+        <div class="space-y-2">
+          <label class="block text-sm font-semibold text-gray-700" for="document-version">Document Version</label>
+          <input id="document-version" value="1.0" class="modern-input w-full px-4 py-3 rounded-xl border-0" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Executive Summary -->
+    <div class="section-card rounded-2xl p-8 mb-8">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold gradient-text flex items-center">
+          <span class="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mr-3">2</span>
+          Executive Summary
+        </h2>
+        <div class="flex items-center space-x-3">
+          <label class="text-sm font-semibold text-gray-600" for="ai-executive-summary">AI Assistant</label>
+          <input id="ai-executive-summary" type="checkbox" class="w-5 h-5 text-purple-600 border-2 border-gray-300 rounded focus:ring-purple-500" />
+        </div>
+      </div>
+      <div id="ai-container-executive-summary" class="ai-container hidden">
+        <input id="ai-prompt-executive-summary" placeholder="Describe your project briefly for AI to expand..." class="modern-input w-full px-4 py-3 rounded-xl border-0 mb-3" />
+        <button id="ai-btn-executive-summary" type="button" class="btn-ai modern-button w-full py-3 rounded-xl font-semibold">✨ Generate with AI</button>
+      </div>
+      <textarea id="executive-summary" rows="6" class="modern-input w-full px-4 py-3 rounded-xl border-0 resize-none" placeholder="Briefly describe the project, including the problem it solves and the value it delivers."></textarea>
+    </div>
+
+    <!-- Goals -->
+    <div class="section-card rounded-2xl p-8 mb-8">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold gradient-text flex items-center">
+          <span class="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mr-3">3</span>
+          Business Goals and Objectives
+        </h2>
+		<!-- Disabling AI Assistant
+        <div class="flex items-center space-x-3">
+          <label class="text-sm font-semibold text-gray-600" for="ai-goals">AI Assistant</label>
+          <input id="ai-goals" type="checkbox" class="w-5 h-5 text-purple-600 border-2 border-gray-300 rounded focus:ring-purple-500" />
+        </div>
+		-->
+      </div>
+      <div id="ai-container-goals" class="ai-container hidden">
+        <input id="ai-prompt-goals" placeholder="Describe your business goals..." class="modern-input w-full px-4 py-3 rounded-xl border-0 mb-3" />
+        <button id="ai-btn-goals" type="button" class="btn-ai modern-button w-full py-3 rounded-xl font-semibold">✨ Generate with AI</button>
+      </div>
+      <div id="goals-list" class="space-y-4">
+        <div class="dynamic-list-item">
+          <input class="modern-input flex-1 px-4 py-3 rounded-xl border-0" placeholder="e.g., Reduce operational costs by 20%" />
+          <button type="button" class="btn-danger modern-button p-3 rounded-xl remove-btn">Remove</button>
+        </div>
+      </div>
+      <button id="add-goal-btn" type="button" class="btn-success modern-button mt-6 px-6 py-3 rounded-xl font-semibold">Add Business Goal</button>
+    </div>
+
+    <!-- Scope -->
+    <div class="section-card rounded-2xl p-8 mb-8">
+      <h2 class="text-2xl font-bold mb-6 gradient-text flex items-center">
+        <span class="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mr-3">4</span>
+        Project Scope
+      </h2>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div>
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-semibold text-gray-800">In-Scope</h3>
+            <div class="flex items-center space-x-3">
+              <label class="text-sm font-semibold text-gray-600" for="ai-in-scope">AI Assistant</label>
+              <input id="ai-in-scope" type="checkbox" class="w-5 h-5 text-purple-600 border-2 border-gray-300 rounded focus:ring-purple-500" />
+            </div>
+          </div>
+          <div id="ai-container-in-scope" class="ai-container hidden">
+            <input id="ai-prompt-in-scope" placeholder="Describe what's included..." class="modern-input w-full px-4 py-3 rounded-xl border-0 mb-3" />
+            <button id="ai-btn-in-scope" type="button" class="btn-ai modern-button w-full py-3 rounded-xl font-semibold">✨ Generate with AI</button>
+          </div>
+          <textarea id="in-scope" rows="6" class="modern-input w-full px-4 py-3 rounded-xl border-0 resize-none" placeholder="List all features, modules, and processes included in the project."></textarea>
+        </div>
+        <div>
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-semibold text-gray-800">Out-of-Scope</h3>
+            <div class="flex items-center space-x-3">
+              <label class="text-sm font-semibold text-gray-600" for="ai-out-of-scope">AI Assistant</label>
+              <input id="ai-out-of-scope" type="checkbox" class="w-5 h-5 text-purple-600 border-2 border-gray-300 rounded focus:ring-purple-500" />
+            </div>
+          </div>
+          <div id="ai-container-out-of-scope" class="ai-container hidden">
+            <input id="ai-prompt-out-of-scope" placeholder="Describe what's excluded..." class="modern-input w-full px-4 py-3 rounded-xl border-0 mb-3" />
+            <button id="ai-btn-out-of-scope" type="button" class="btn-ai modern-button w-full py-3 rounded-xl font-semibold">✨ Generate with AI</button>
+          </div>
+          <textarea id="out-of-scope" rows="6" class="modern-input w-full px-4 py-3 rounded-xl border-0 resize-none" placeholder="List all features, modules, and processes excluded from the project."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stakeholders -->
+    <div class="section-card rounded-2xl p-8 mb-8">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold gradient-text flex items-center">
+          <span class="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mr-3">5</span>
+          Key Stakeholders
+        </h2>
+		<!-- Disabling AI Assistant
+        <div class="flex items-center space-x-3">
+          <label class="text-sm font-semibold text-gray-600" for="ai-stakeholders">AI Assistant</label>
+          <input id="ai-stakeholders" type="checkbox" class="w-5 h-5 text-purple-600 border-2 border-gray-300 rounded focus:ring-purple-500" />
+        </div>
+		-->
+      </div>
+      <div id="ai-container-stakeholders" class="ai-container hidden">
+        <input id="ai-prompt-stakeholders" placeholder="Describe your stakeholders..." class="modern-input w-full px-4 py-3 rounded-xl border-0 mb-3" />
+        <button id="ai-btn-stakeholders" type="button" class="btn-ai modern-button w-full py-3 rounded-xl font-semibold">✨ Generate with AI</button>
+      </div>
+      <div id="stakeholders-list" class="space-y-4">
+        <div class="dynamic-list-item">
+          <input class="modern-input flex-1 px-4 py-3 rounded-xl border-0" placeholder="e.g., Sarah Davis, Marketing Manager" />
+          <button type="button" class="btn-danger modern-button p-3 rounded-xl remove-btn">Remove</button>
+        </div>
+      </div>
+      <button id="add-stakeholder-btn" type="button" class="btn-success modern-button mt-6 px-6 py-3 rounded-xl font-semibold">Add Stakeholder</button>
+    </div>
+
+    <!-- Functional Reqs -->
+    <div class="section-card rounded-2xl p-8 mb-8">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold gradient-text flex items-center">
+          <span class="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mr-3">6</span>
+          Functional Requirements
+        </h2>
+		<!-- Disabling AI Assistant
+        <div class="flex items-center space-x-3">
+          <label class="text-sm font-semibold text-gray-600" for="ai-functional-reqs">AI Assistant</label>
+          <input id="ai-functional-reqs" type="checkbox" class="w-5 h-5 text-purple-600 border-2 border-gray-300 rounded focus:ring-purple-500" />
+        </div>
+		-->
+      </div>
+      <div id="ai-container-functional-reqs" class="ai-container hidden">
+        <input id="ai-prompt-functional-reqs" placeholder="Describe functional requirements..." class="modern-input w-full px-4 py-3 rounded-xl border-0 mb-3" />
+        <button id="ai-btn-functional-reqs" type="button" class="btn-ai modern-button w-full py-3 rounded-xl font-semibold">✨ Generate with AI</button>
+      </div>
+      <div id="functional-reqs-list" class="space-y-4">
+        <div class="dynamic-list-item">
+          <input class="modern-input flex-1 px-4 py-3 rounded-xl border-0" placeholder="e.g., The system must have a secure user authentication portal" />
+          <button type="button" class="btn-danger modern-button p-3 rounded-xl remove-btn">Remove</button>
+        </div>
+      </div>
+      <button id="add-functional-req-btn" type="button" class="btn-success modern-button mt-6 px-6 py-3 rounded-xl font-semibold">Add Functional Requirement</button>
+    </div>
+
+    <!-- Non-Functional Reqs -->
+    <div class="section-card rounded-2xl p-8 mb-8">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold gradient-text flex items-center">
+          <span class="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mr-3">7</span>
+          Non-Functional Requirements
+        </h2>
+		<!-- Disabling AI Assistant
+        <div class="flex items-center space-x-3">
+          <label class="text-sm font-semibold text-gray-600" for="ai-non-functional-reqs">AI Assistant</label>
+          <input id="ai-non-functional-reqs" type="checkbox" class="w-5 h-5 text-purple-600 border-2 border-gray-300 rounded focus:ring-purple-500" />
+        </div>
+		-->
+      </div>
+      <div id="ai-container-non-functional-reqs" class="ai-container hidden">
+        <input id="ai-prompt-non-functional-reqs" placeholder="Describe non-functional requirements..." class="modern-input w-full px-4 py-3 rounded-xl border-0 mb-3" />
+        <button id="ai-btn-non-functional-reqs" type="button" class="btn-ai modern-button w-full py-3 rounded-xl font-semibold">✨ Generate with AI</button>
+      </div>
+      <div id="non-functional-reqs-list" class="space-y-4">
+        <div class="dynamic-list-item">
+          <input class="modern-input flex-1 px-4 py-3 rounded-xl border-0" placeholder="e.g., 99.9% uptime" />
+          <button type="button" class="btn-danger modern-button p-3 rounded-xl remove-btn">Remove</button>
+        </div>
+      </div>
+      <button id="add-non-functional-req-btn" type="button" class="btn-success modern-button mt-6 px-6 py-3 rounded-xl font-semibold">Add Non-Functional Requirement</button>
+    </div>
+
+    <!-- Assumptions & Constraints -->
+    <div class="section-card rounded-2xl p-8 mb-8">
+      <h2 class="text-2xl font-bold mb-6 gradient-text flex items-center">
+        <span class="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mr-3">8</span>
+        Assumptions and Constraints
+      </h2>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div>
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-semibold text-gray-800">Assumptions</h3>
+            <div class="flex items-center space-x-3">
+              <label class="text-sm font-semibold text-gray-600" for="ai-assumptions">AI Assistant</label>
+              <input id="ai-assumptions" type="checkbox" class="w-5 h-5 text-purple-600 border-2 border-gray-300 rounded focus:ring-purple-500" />
+            </div>
+          </div>
+          <div id="ai-container-assumptions" class="ai-container hidden">
+            <input id="ai-prompt-assumptions" placeholder="Describe project assumptions..." class="modern-input w-full px-4 py-3 rounded-xl border-0 mb-3" />
+            <button id="ai-btn-assumptions" type="button" class="btn-ai modern-button w-full py-3 rounded-xl font-semibold">✨ Generate with AI</button>
+          </div>
+          <textarea id="assumptions" rows="6" class="modern-input w-full px-4 py-3 rounded-xl border-0 resize-none" placeholder="e.g., The necessary technical infrastructure will be available by project start."></textarea>
+        </div>
+        <div>
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-semibold text-gray-800">Constraints</h3>
+            <div class="flex items-center space-x-3">
+              <label class="text-sm font-semibold text-gray-600" for="ai-constraints">AI Assistant</label>
+              <input id="ai-constraints" type="checkbox" class="w-5 h-5 text-purple-600 border-2 border-gray-300 rounded focus:ring-purple-500" />
+            </div>
+          </div>
+          <div id="ai-container-constraints" class="ai-container hidden">
+            <input id="ai-prompt-constraints" placeholder="Describe project constraints..." class="modern-input w-full px-4 py-3 rounded-xl border-0 mb-3" />
+            <button id="ai-btn-constraints" type="button" class="btn-ai modern-button w-full py-3 rounded-xl font-semibold">✨ Generate with AI</button>
+          </div>
+          <textarea id="constraints" rows="6" class="modern-input w-full px-4 py-3 rounded-xl border-0 resize-none" placeholder="e.g., The project must be completed within a budget of $500,000."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Appendices -->
+    <div class="section-card rounded-2xl p-8 mb-8">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold gradient-text flex items-center">
+          <span class="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mr-3">9</span>
+          Appendices
+        </h2>
+		<!-- Disabling AI Assistant
+        <div class="flex items-center space-x-3">
+          <label class="text-sm font-semibold text-gray-600" for="ai-appendices">AI Assistant</label>
+          <input id="ai-appendices" type="checkbox" class="w-5 h-5 text-purple-600 border-2 border-gray-300 rounded focus:ring-purple-500" />
+        </div>
+		-->
+      </div>
+      <div id="ai-container-appendices" class="ai-container hidden">
+        <input id="ai-prompt-appendices" placeholder="Describe additional documentation..." class="modern-input w-full px-4 py-3 rounded-xl border-0 mb-3" />
+        <button id="ai-btn-appendices" type="button" class="btn-ai modern-button w-full py-3 rounded-xl font-semibold">✨ Generate with AI</button>
+      </div>
+      <div id="appendices-list" class="space-y-4">
+        <div class="dynamic-list-item">
+          <input class="modern-input flex-1 px-4 py-3 rounded-xl border-0" placeholder="e.g., Appendix B: Mockups of the user interface" />
+          <button type="button" class="btn-danger modern-button p-3 rounded-xl remove-btn">Remove</button>
+        </div>
+      </div>
+      <button id="add-appendix-btn" type="button" class="btn-success modern-button mt-6 px-6 py-3 rounded-xl font-semibold">Add Appendix</button>
+    </div>
+
+    <!-- Export / Review -->
+    <div class="flex flex-wrap justify-center items-center gap-4 mt-10">
+      <button id="export-pdf-btn" class="btn-primary modern-button px-8 py-4 rounded-xl font-bold text-lg">Export as PDF</button>
+      <button id="export-word-btn" class="btn-success modern-button px-8 py-4 rounded-xl font-bold text-lg">Export as Word</button>
+      <button id="review-brd-btn" class="btn-primary modern-button px-8 py-4 rounded-xl font-bold text-lg">Review BRD</button>
+    </div>
+  </div>
+
+  <!-- Preview container for export -->
+  <div id="brd-output" class="hidden pdf-content"></div>
+
+  <!-- Review Modal -->
+  <div id="review-modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+    <div class="bg-white w-11/12 max-w-4xl max-h-[90vh] rounded-2xl shadow-2xl flex flex-col">
+      <div class="flex justify-between items-center p-4 border-b">
+        <h2 class="text-xl font-bold text-gray-800">📄 BRD Review</h2>
+        <button id="close-review-btn" class="text-gray-600 hover:text-red-600 text-2xl">&times;</button>
+      </div>
+      <div id="review-modal-body" class="p-6 overflow-y-auto flex-1"></div>
+      <div class="p-4 border-t flex justify-end">
+        <button id="close-footer-btn" class="btn-danger modern-button px-6 py-2 rounded-xl">Close</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* -------------------- Content Builders -------------------- */
+function generateTableOfContents(sections){
+  return `
+    <h2 style="text-align:center;font-weight:bold;text-decoration:underline;margin-top:20px;">Table of Contents</h2>
+    <ol style="margin-left:40px;line-height:1.6;">
+      ${sections.map(s => `<li>${s}</li>`).join('')}
+    </ol>
+    <hr style="margin:20px 0;">
+  `;
+}
+
+function generateBRDContentStyled(includeTOC=false){
+  const getValue = id => document.getElementById(id)?.value || "";
+  const getListValues = id => Array.from(document.querySelectorAll(`#${id} input`)).map(i=>i.value.trim()).filter(Boolean);
+
+  const sections = [
+    "Executive Summary","Business Goals","Scope","Stakeholders",
+    "Functional Requirements","Non-Functional Requirements",
+    "Assumptions","Constraints","Appendices"
+  ];
+
+  let content = `
+  <div class="pdf-content">
+    <h1>${getValue('project-title') || 'Business Requirements Document'}</h1>
+    <div class="pdf-info-box">
+      <p><b>Author:</b> ${getValue('document-author')||'-'}</p>
+      <p><b>Date:</b> ${getValue('document-date')||'-'}</p>
+      <p><b>Version:</b> ${getValue('document-version')||'-'}</p>
+    </div>
+    ${includeTOC ? generateTableOfContents(sections) : ''}
+    <h2><b>1. Executive Summary</b></h2>
+    <p>${getValue('executive-summary')}</p>
+
+    <h2><b>2. Business Goals</b></h2>
+    <ul>${getListValues('goals-list').map(x=>`<li>${x}</li>`).join('')}</ul>
+
+    <h2><b>3. Scope</b></h2>
+    <h3><b>3.1 In-Scope</b></h3>
+    <p>${getValue('in-scope')}</p>
+    <h3><b>3.2 Out-of-Scope</b></h3>
+    <p>${getValue('out-of-scope')}</p>
+
+    <h2><b>4. Stakeholders</b></h2>
+    <ul>${getListValues('stakeholders-list').map(x=>`<li>${x}</li>`).join('')}</ul>
+
+    <h2><b>5. Functional Requirements</b></h2>
+    <ul>${getListValues('functional-reqs-list').map(x=>`<li>${x}</li>`).join('')}</ul>
+
+    <h2><b>6. Non-Functional Requirements</b></h2>
+    <ul>${getListValues('non-functional-reqs-list').map(x=>`<li>${x}</li>`).join('')}</ul>
+
+    <h2><b>7. Assumptions</b></h2>
+    <p>${getValue('assumptions')}</p>
+
+    <h2><b>8. Constraints</b></h2>
+    <p>${getValue('constraints')}</p>
+
+    <h2><b>9. Appendices</b></h2>
+    <ul>${getListValues('appendices-list').map(x=>`<li>${x}</li>`).join('')}</ul>
+  </div>`;
+  return content;
+}
+
+/* -------------------- AI helpers -------------------- */
+async function callAI(prompt, mode, targetId){
+  const generateBtn = document.getElementById(`ai-btn-${targetId}`);
+  const polishBtn = document.getElementById(`ai-polish-btn-${targetId}`);
+  const btn = mode === 'generate' ? generateBtn : polishBtn;
+
+  const originalText = btn.textContent;
+  btn.textContent = 'Processing...';
+  btn.disabled = true;
+
+  const apiKey = "AIzaSyAZ1r4t6nDffIOw4NcFnhOx3qJbNX7pECI"; // <- place your Gemini API key here
+  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+  const instruction = mode === 'generate'
+    ? `Expand into clear, concise BRD bullets or paragraph as appropriate:\n${prompt}`
+    : `Polish the following BRD text. Keep meaning, improve clarity and professionalism. Output in the same format (bullets if bullets, paragraph if paragraph):\n${prompt}`;
+
+  try{
+    const res = await fetch(apiUrl,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({contents:[{parts:[{text:instruction}]}]})
+    });
+    const data = await res.json();
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+    // Decide if target is a textarea or a list (based on existing DOM)
+    const textarea = document.getElementById(targetId);
+    if (textarea) {
+      textarea.value = text.trim();
+    } else {
+      // list targets map
+      const map = {
+        'goals':'goals-list',
+        'stakeholders':'stakeholders-list',
+        'functional-reqs':'functional-reqs-list',
+        'non-functional-reqs':'non-functional-reqs-list',
+        'appendices':'appendices-list'
+      };
+      const listId = map[targetId];
+      if (listId){
+        setListFromAI(listId, text);
+      }
+    }
+  }catch(e){
+    alert('AI error: ' + (e?.message || e));
+  }finally{
+    btn.textContent = originalText;
+    btn.disabled = false;
+  }
+}
+
+function setListFromAI(listId, text){
+  const lines = text.split(/\r?\n|•|-|\u2022/).map(s=>s.trim()).filter(s=>s.length>0);
+  const list = document.getElementById(listId);
+  list.innerHTML = '';
+  lines.forEach(line=>{
+    const div = document.createElement('div');
+    div.className = 'dynamic-list-item';
+    div.innerHTML = `
+      <input class="modern-input flex-1 px-4 py-3 rounded-xl border-0" value="${line.replace(/"/g,'&quot;')}" />
+      <button type="button" class="btn-danger modern-button p-3 rounded- xl remove-btn">Remove</button>`;
+    div.querySelector('.remove-btn').addEventListener('click',()=>div.remove());
+    list.appendChild(div);
+  });
+}
+
+/* -------------------- Wiring -------------------- */
+document.addEventListener('DOMContentLoaded',()=>{
+
+  // Add/remove list items
+  const mkItem = (ph) => {
+    const div = document.createElement('div');
+    div.className = 'dynamic-list-item';
+    div.innerHTML = `
+      <input class="modern-input flex-1 px-4 py-3 rounded-xl border-0" placeholder="${ph}"/>
+      <button type="button" class="btn-danger modern-button p-3 rounded-xl remove-btn">Remove</button>`;
+    div.querySelector('.remove-btn').addEventListener('click',()=>div.remove());
+    return div;
+  };
+  document.getElementById('add-goal-btn').addEventListener('click',()=>document.getElementById('goals-list').appendChild(mkItem('e.g., Reduce operational costs by 20%')));
+  document.getElementById('add-stakeholder-btn').addEventListener('click',()=>document.getElementById('stakeholders-list').appendChild(mkItem('e.g., Sarah Davis, Marketing Manager')));
+  document.getElementById('add-functional-req-btn').addEventListener('click',()=>document.getElementById('functional-reqs-list').appendChild(mkItem('e.g., Secure authentication portal')));
+  document.getElementById('add-non-functional-req-btn').addEventListener('click',()=>document.getElementById('non-functional-reqs-list').appendChild(mkItem('e.g., 99.9% uptime')));
+  document.getElementById('add-appendix-btn').addEventListener('click',()=>document.getElementById('appendices-list').appendChild(mkItem('e.g., Appendix B: Mockups')));
+
+  // Toggle AI containers + add Polish buttons + hook handlers
+  const aiFields = [
+    // textareas
+    'executive-summary','in-scope','out-of-scope','assumptions','constraints',
+    // lists
+    'goals','stakeholders','functional-reqs','non-functional-reqs','appendices'
+  ];
+  aiFields.forEach(fid=>{
+    const checkbox = document.getElementById(`ai-${fid}`);
+    const container = document.getElementById(`ai-container-${fid}`);
+    const promptInput = document.getElementById(`ai-prompt-${fid}`);
+    const genBtn = document.getElementById(`ai-btn-${fid}`);
+
+    if (checkbox && container){
+      checkbox.addEventListener('change',()=>container.classList.toggle('hidden',!checkbox.checked));
+    }
+
+    if (genBtn && promptInput){
+      // Insert a Polish button right after the Generate button
+      const polishBtn = document.createElement('button');
+      polishBtn.type = 'button';
+      polishBtn.id = `ai-polish-btn-${fid}`;
+      polishBtn.className = 'btn-ai-secondary modern-button w-full py-3 rounded-xl font-semibold mt-2';
+      polishBtn.textContent = '📝 Polish with AI';
+      genBtn.insertAdjacentElement('afterend', polishBtn);
+
+      // Click handlers
+      genBtn.addEventListener('click',()=>{
+        const seed = promptInput.value.trim();
+        if (!seed) return alert('Please enter a prompt.');
+        callAI(seed,'generate',fid);
+      });
+
+      polishBtn.addEventListener('click',()=>{
+        // Gather existing content as input
+        const textarea = document.getElementById(fid);
+        let seed = '';
+        if (textarea){
+          seed = textarea.value.trim();
+        }else{
+          const map = {
+            'goals':'goals-list','stakeholders':'stakeholders-list',
+            'functional-reqs':'functional-reqs-list','non-functional-reqs':'non-functional-reqs-list',
+            'appendices':'appendices-list'
+          };
+          const listId = map[fid];
+          if (listId){
+            const items = Array.from(document.querySelectorAll(`#${listId} input`)).map(x=>x.value.trim()).filter(Boolean);
+            seed = items.join('\n');
+          }
+        }
+        if (!seed) seed = promptInput.value.trim();
+        if (!seed) return alert('Please enter some text to polish.');
+        callAI(seed,'polish',fid);
+      });
+    }
+  });
+
+  // Review modal
+  document.getElementById('review-brd-btn').addEventListener('click',()=>{
+    document.getElementById('review-modal-body').innerHTML = generateBRDContentStyled(true);
+    const m = document.getElementById('review-modal');
+    m.classList.remove('hidden'); m.classList.add('flex');
+  });
+  ['close-review-btn','close-footer-btn'].forEach(id=>{
+    document.getElementById(id).addEventListener('click',()=>document.getElementById('review-modal').classList.add('hidden'));
+  });
+
+// ---------- helpers for PDF layout ----------
+function getListValues(listId){
+  return Array.from(document.querySelectorAll(`#${listId} input`))
+    .map(el => el.value.trim())
+    .filter(Boolean);
+}
+
+document.getElementById('export-pdf-btn').addEventListener('click', () => {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: "pt", format: "a4" });
+
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const margin = 50;
+  let y = margin;
+
+  const setNormal = () => { doc.setFont("times", "normal"); doc.setFontSize(12); };
+  const setBold   = () => { doc.setFont("times", "bold");   doc.setFontSize(12); };
+  const setH1     = () => { doc.setFont("times", "bold");   doc.setFontSize(18); };
+  const setH2     = () => { doc.setFont("times", "bold");   doc.setFontSize(14); };
+
+  const addLine = (gap = 16) => {
+    y += gap;
+    if (y > pageH - margin) {
+      doc.addPage();
+      y = margin;
+    }
+  };
+
+  const write = (txt, x = margin) => {
+    const lines = doc.splitTextToSize(txt, pageW - margin * 2);
+    lines.forEach(line => {
+      if (y > pageH - margin) {
+        doc.addPage();
+        y = margin;
+      }
+      doc.text(line, x, y);
+      y += 16;
+    });
+  };
+
+  // -------- Gather Values --------
+  const v = id => (document.getElementById(id)?.value || '').trim();
+  const projectTitle = v('project-title') || 'Business Requirements Document';
+  const author = v('document-author') || '-';
+  const dateVal = v('document-date') || '-';
+  const version = v('document-version') || '-';
+
+  const goals = getListValues('goals-list');
+  const stakeholders = getListValues('stakeholders-list');
+  const funcReqs = getListValues('functional-reqs-list');
+  const nonFuncReqs = getListValues('non-functional-reqs-list');
+  const appendices = getListValues('appendices-list');
+
+  const execSummary = v('executive-summary');
+  const inScope = v('in-scope');
+  const outScope = v('out-of-scope');
+  const assumptions = v('assumptions');
+  const constraints = v('constraints');
+
+  // -------- Title --------
+  setH1();
+  doc.text(projectTitle, pageW/2, y, { align: "center" });
+  y += 40;
+
+  setBold(); doc.text("Author:", margin, y); setNormal(); doc.text(author, margin+70, y); y+=20;
+  setBold(); doc.text("Date:", margin, y); setNormal(); doc.text(dateVal, margin+70, y); y+=20;
+  setBold(); doc.text("Version:", margin, y); setNormal(); doc.text(version, margin+70, y);
+  y+=40;
+
+  // -------- TOC --------
+  setBold(); doc.setFontSize(14);
+  doc.text("Table of Contents", pageW/2, y, { align:"center" });
+  y += 25;
+  setNormal();
+
+  const toc = [
+    "Executive Summary",
+    "Business Goals",
+    "Scope",
+    "Stakeholders",
+    "Functional Requirements",
+    "Non-Functional Requirements",
+    "Assumptions",
+    "Constraints",
+    "Appendices"
+  ];
+
+  toc.forEach((t,i) => { 
+    write(`${i+1}. ${t}`);
+    y += 4; // extra spacing between TOC lines
+  });
+
+  y += 10; 
+  doc.line(margin, y, pageW - margin, y); 
+  y += 30;
+
+  // -------- Sections --------
+  setH2(); doc.text("1. Executive Summary", margin, y); y+=20;
+  setNormal(); write(execSummary); addLine();
+
+  setH2(); doc.text("2. Business Goals", margin, y); y+=20;
+  setNormal(); goals.forEach(g=>write("• "+g)); addLine();
+
+  setH2(); doc.text("3. Scope", margin, y); y+=20;
+  setBold(); doc.text("3.1 In-Scope", margin, y); y+=16; setNormal(); write(inScope); addLine();
+  setBold(); doc.text("3.2 Out-of-Scope", margin, y); y+=16; setNormal(); write(outScope); addLine();
+
+  setH2(); doc.text("4. Stakeholders", margin, y); y+=20;
+  setNormal(); stakeholders.forEach(s=>write("• "+s)); addLine();
+
+  setH2(); doc.text("5. Functional Requirements", margin, y); y+=20;
+  setNormal(); funcReqs.forEach(f=>write("• "+f)); addLine();
+
+  setH2(); doc.text("6. Non-Functional Requirements", margin, y); y+=20;
+  setNormal(); nonFuncReqs.forEach(n=>write("• "+n)); addLine();
+
+  setH2(); doc.text("7. Assumptions", margin, y); y+=20;
+  setNormal(); write(assumptions); addLine();
+
+  setH2(); doc.text("8. Constraints", margin, y); y+=20;
+  setNormal(); write(constraints); addLine();
+
+  setH2(); doc.text("9. Appendices", margin, y); y+=20;
+  setNormal(); appendices.forEach(a=>write("• "+a));
+
+  doc.save("BRD_Document.pdf");
+});
+
+
+
+  // Export Word
+  document.getElementById('export-word-btn').addEventListener('click',()=>{
+    const content = generateBRDContentStyled(true);
+    const html = `
+      <html xmlns:o='urn:schemas-microsoft-com:office:office'
+            xmlns:w='urn:schemas-microsoft-com:office:word'
+            xmlns='http://www.w3.org/TR/REC-html40'>
+      <head><meta charset="utf-8"><title>BRD</title></head>
+      <body>${content}</body></html>`;
+    const blob = new Blob([html], {type:'application/msword'});
+    saveAs(blob, 'BRD_Document.doc');
+  });
+});
+</script>
+</body>
+</html>

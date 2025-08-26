@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SWOT Analysis</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config={theme:{extend:{fontFamily:{sans:["Inter","ui-sans-serif","system-ui"]},boxShadow:{soft:"0 10px 25px -10px rgba(2,6,23,.25)"}}}}</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<!-- Export libs -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html-docx-js/dist/html-docx.js"></script>
+  <!-- Drag & drop reorder -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
+  <style>
+    body{background:radial-gradient(900px 500px at -10% -10%,#eef2ff,transparent),radial-gradient(1200px 700px at 110% -20%,#ecfeff,transparent),#f8fafc}
+    .glass{backdrop-filter:saturate(160%) blur(6px)}
+    .card{border:1px solid rgba(2,6,23,.06)}
+    .quad{min-height:280px}
+    .print-area{max-width:1100px}
+    @page{size:A4;margin:16mm}
+    @media print{#toolbar{display:none}body{background:white}}
+	
+	    .logout-btn {
+      padding: 10px 18px;
+      background: #2563eb;
+      color: white;
+      font-weight: 500;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 3px 6px rgba(37,99,235,0.2);
+    }
+  </style>
+</head>
+<body class="min-h-screen font-sans text-slate-800">
+  <!-- Toolbar -->
+  <header id="toolbar" class="sticky top-0 z-50 bg-white/80 glass shadow-soft">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+
+<div>
+<div class="flex items-center gap-2">
+  <!-- Logo -->
+  <img src="InsightSuiteTransparent.png" alt="InsightSuite Logo" class="w-8 h-8 object-contain" />
+
+  <!-- Title -->
+  <div class="text-lg font-semibold leading-tight">SWOT Analysis</div>
+
+  <!-- AI Assistant Badge -->
+  <span class="px-2 py-0.5 text-xs font-medium rounded-full 
+               bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow">
+    AI Assistant
+  </span>
+</div>
+  <div class="text-xs text-slate-500">AI Driven – Modern, printable, export-ready</div>
+</div>
+
+      </div>
+<div class="flex items-center gap-2 flex-wrap">
+  <button id="btn-new" class="px-3 py-2 rounded-xl bg-white border hover:bg-slate-50">New</button>
+  <button id="btn-import" class="px-3 py-2 rounded-xl bg-white border hover:bg-slate-50">Import JSON</button>
+  <input id="file-json" type="file" accept="application/json" class="hidden"/>
+  <div class="w-px h-7 bg-slate-200"></div>
+  <button id="btn-png" class="px-3 py-2 rounded-xl bg-white border hover:bg-slate-50">PNG</button>
+  <button id="btn-pdf" class="px-3 py-2 rounded-xl bg-white border hover:bg-slate-50">PDF</button>
+  <button id="btn-docx" class="px-3 py-2 rounded-xl bg-white border hover:bg-slate-50">Word</button>
+  <button id="btn-json" class="px-3 py-2 rounded-xl bg-white border hover:bg-slate-50">JSON</button>
+      <button class="logout-btn" onclick="window.location.href='chooser.html'">
+      Switch Apps
+    </button>
+</div>
+
+    </div>
+  </header>
+
+  <!-- Content -->
+  <div id="sheet" class="mx-auto print-area max-w-7xl px-4 sm:px-6 py-8">
+  
+    <div class="mb-6 grid gap-4 md:grid-cols-3 items-end">
+      <div class="md:col-span-2">
+        <label class="text-xs font-medium text-slate-500">Title</label>
+        <input id="title" class="w-full text-3xl md:text-4xl font-extrabold tracking-tight bg-transparent focus:outline-none border-b border-transparent focus:border-indigo-400" placeholder="e.g., Q4 Product Launch SWOT"/>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs font-medium text-slate-500">Owner</label>
+          <input id="owner" class="w-full bg-white/70 glass rounded-xl px-3 py-2 border card" placeholder="Your name"/>
+        </div>
+        <div>
+          <label class="text-xs font-medium text-slate-500">Date</label>
+          <input id="date" type="date" class="w-full bg-white/70 glass rounded-xl px-3 py-2 border card"/>
+        </div>
+		
+      </div>
+<div class="mt-4 col-span-3">
+  <label class="text-xs font-medium text-slate-500">AI Context</label>
+  <input id="ai-context" 
+         class="w-full bg-white/70 glass rounded-xl px-3 py-2 border card" 
+         placeholder="e.g., Launching a new app, entering a new market"/>
+  <button id="ai-full-swot" 
+          class="mt-2 px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 w-full">
+    Generate Full SWOT with AI
+  </button>
+</div>
+
+
+    </div>
+
+ <!-- Quadrants -->
+<section id="grid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+  <!-- Strengths -->
+  <article class="card bg-white/80 glass rounded-2xl p-5 quad" data-quad="strengths">
+    <header class="flex items-center justify-between mb-3">
+      <h2 class="text-2xl font-bold text-emerald-700">Strengths</h2>
+      <span class="text-xs px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+        <span class="count">0</span> items
+      </span>
+    </header>
+    <ul class="list-disc ps-5 space-y-2 sortable"></ul>
+    <div class="mt-4 flex gap-2">
+      <input class="flex-1 rounded-xl border px-3 py-2" placeholder="Add a strength…"/>
+      <button class="add px-3 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700">Add</button>
+    </div>
+    <!-- AI Response -->
+    <textarea class="ai-output w-full mt-3 rounded-xl border px-3 py-2 text-sm bg-slate-50" 
+              rows="4" readonly 
+              placeholder="AI-generated strengths will appear here…"></textarea>
+  </article>
+
+  <!-- Weaknesses -->
+  <article class="card bg-white/80 glass rounded-2xl p-5 quad" data-quad="weaknesses">
+    <header class="flex items-center justify-between mb-3">
+      <h2 class="text-2xl font-bold text-rose-700">Weaknesses</h2>
+      <span class="text-xs px-2 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+        <span class="count">0</span> items
+      </span>
+    </header>
+    <ul class="list-disc ps-5 space-y-2 sortable"></ul>
+    <div class="mt-4 flex gap-2">
+      <input class="flex-1 rounded-xl border px-3 py-2" placeholder="Add a weakness…"/>
+      <button class="add px-3 py-2 rounded-xl bg-rose-600 text-white hover:bg-rose-700">Add</button>
+    </div>
+    <!-- AI Response -->
+    <textarea class="ai-output w-full mt-3 rounded-xl border px-3 py-2 text-sm bg-slate-50" 
+              rows="4" readonly 
+              placeholder="AI-generated weaknesses will appear here…"></textarea>
+  </article>
+
+  <!-- Opportunities -->
+  <article class="card bg-white/80 glass rounded-2xl p-5 quad" data-quad="opportunities">
+    <header class="flex items-center justify-between mb-3">
+      <h2 class="text-2xl font-bold text-sky-700">Opportunities</h2>
+      <span class="text-xs px-2 py-1 rounded-full bg-sky-50 text-sky-700 border border-sky-200">
+        <span class="count">0</span> items
+      </span>
+    </header>
+    <ul class="list-disc ps-5 space-y-2 sortable"></ul>
+    <div class="mt-4 flex gap-2">
+      <input class="flex-1 rounded-xl border px-3 py-2" placeholder="Add an opportunity…"/>
+      <button class="add px-3 py-2 rounded-xl bg-sky-600 text-white hover:bg-sky-700">Add</button>
+    </div>
+    <!-- AI Response -->
+    <textarea class="ai-output w-full mt-3 rounded-xl border px-3 py-2 text-sm bg-slate-50" 
+              rows="4" readonly 
+              placeholder="AI-generated opportunities will appear here…"></textarea>
+  </article>
+
+  <!-- Threats -->
+  <article class="card bg-white/80 glass rounded-2xl p-5 quad" data-quad="threats">
+    <header class="flex items-center justify-between mb-3">
+      <h2 class="text-2xl font-bold text-amber-700">Threats</h2>
+      <span class="text-xs px-2 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+        <span class="count">0</span> items
+      </span>
+    </header>
+    <ul class="list-disc ps-5 space-y-2 sortable"></ul>
+    <div class="mt-4 flex gap-2">
+      <input class="flex-1 rounded-xl border px-3 py-2" placeholder="Add a threat…"/>
+      <button class="add px-3 py-2 rounded-xl bg-amber-600 text-white hover:bg-amber-700">Add</button>
+    </div>
+    <!-- AI Response -->
+    <textarea class="ai-output w-full mt-3 rounded-xl border px-3 py-2 text-sm bg-slate-50" 
+              rows="4" readonly 
+              placeholder="AI-generated threats will appear here…"></textarea>
+  </article>
+</section>
+
+
+    <!-- Notes -->
+    <section class="mt-6 grid md:grid-cols-2 gap-6">
+      <div class="card bg-white/80 glass rounded-2xl p-5">
+        <h3 class="text-lg font-semibold mb-2">Summary / Insights</h3>
+        <textarea id="notes" class="w-full min-h-[120px] rounded-xl border px-3 py-2" placeholder="Key observations, priorities, next steps…"></textarea>
+      </div>
+      <div class="card bg-white/80 glass rounded-2xl p-5">
+        <h3 class="text-lg font-semibold mb-2">Assumptions & Scope</h3>
+        <textarea id="scope" class="w-full min-h-[120px] rounded-xl border px-3 py-2" placeholder="Assumptions, scope boundaries, constraints…"></textarea>
+      </div>
+    </section>
+  </div>
+
+  <template id="item-tpl">
+    <li class="group marker:text-slate-400">
+      <div class="-ms-1 flex items-start gap-2">
+        <span class="cursor-grab select-none text-slate-400 group-hover:text-slate-600">⋮⋮</span>
+        <div class="flex-1">
+          <div class="item-text"></div>
+          <div class="mt-1 hidden group-hover:flex items-center gap-2 text-xs text-slate-500">
+            <button class="edit underline">Edit</button>
+            <button class="del underline text-rose-600">Delete</button>
+            <span class="px-2 py-0.5 rounded-full bg-slate-100 border text-[11px] tag">Normal</span>
+          </div>
+        </div>
+      </div>
+    </li>
+  </template>
+
+  <script>
+  
+    const qs = (s, el=document)=>el.querySelector(s); const qsa = (s, el=document)=>[...el.querySelectorAll(s)];
+
+    const state = JSON.parse(localStorage.getItem('swot-pro')||'{}');
+    const model = Object.assign({
+      meta:{ title:'', owner:'', date:'', notes:'', scope:'' },
+      strengths:[], weaknesses:[], opportunities:[], threats:[]
+    }, state);
+
+    // hydrate meta
+    qs('#title').value = model.meta.title || '';
+    qs('#owner').value = model.meta.owner || '';
+    qs('#date').value = model.meta.date || new Date().toISOString().slice(0,10);
+    qs('#notes').value = model.meta.notes || '';
+    qs('#scope').value = model.meta.scope || '';
+
+    // bind meta inputs
+    ['title','owner','date','notes','scope'].forEach(id=>{
+      qs('#'+id).addEventListener('input', ()=>{ model.meta[id]=qs('#'+id).value; persist(); });
+    });
+
+    // build quadrants
+    qsa('[data-quad]').forEach(card=>{
+      const key = card.dataset.quad;
+      const list = qs('ul', card);
+      const input = qs('input', card);
+      const add = qs('.add', card);
+      const count = qs('.count', card);
+
+      // add handler
+      add.addEventListener('click', ()=>{ if(!input.value.trim()) return; model[key].push({text:input.value.trim(), tag:'Normal'}); input.value=''; render(key); persist(); });
+      input.addEventListener('keydown', e=>{ if(e.key==='Enter'){ add.click(); }});
+
+      // render list
+      function render(){
+        list.innerHTML='';
+        model[key].forEach((it,i)=>{
+          const li = document.importNode(qs('#item-tpl').content, true);
+          qs('.item-text', li).textContent = it.text;
+          qs('.tag', li).textContent = it.tag || 'Normal';
+          const node = li.firstElementChild;
+          qs('.edit', node).onclick = ()=> edit(i);
+          qs('.del', node).onclick = ()=> { model[key].splice(i,1); render(); persist(); };
+          list.appendChild(node);
+        });
+        count.textContent = model[key].length;
+      }
+      card.render = render; // expose
+
+      // editing
+      function edit(i){
+        const current = model[key][i];
+        const text = prompt('Edit item', current.text);
+        if(text===null) return;
+        const tag = prompt('Priority tag (e.g., High / Medium / Low)', current.tag||'Normal');
+        model[key][i] = { text: text.trim(), tag: (tag||'Normal').trim() };
+        render(); persist();
+      }
+
+      // drag & drop
+      new Sortable(list, { animation: 150, handle: 'span', onEnd: ({oldIndex, newIndex})=>{
+        if(oldIndex===newIndex) return; const arr = model[key]; const [m] = arr.splice(oldIndex,1); arr.splice(newIndex,0,m); persist(); }
+      });
+    });
+
+    // initial render
+    ['strengths','weaknesses','opportunities','threats'].forEach(k=>{ const card = qs(`[data-quad="${k}"]`); card.render(); });
+
+    // persistence
+    function persist(){ localStorage.setItem('swot-pro', JSON.stringify(model)); }
+
+    // new / import / export
+    qs('#btn-new').onclick = ()=>{ localStorage.removeItem('swot-pro'); location.reload(); };
+    qs('#btn-import').onclick = ()=> qs('#file-json').click();
+    qs('#file-json').addEventListener('change', async e=>{
+      const f = e.target.files[0]; if(!f) return; try{ const txt = await f.text(); const obj = JSON.parse(txt); Object.assign(model, obj); persist(); location.reload(); }catch(err){ alert('Invalid JSON'); }
+    });
+
+    qs('#btn-json').onclick = ()=>{
+      const data = JSON.stringify(model, null, 2);
+      const blob = new Blob([data], {type:'application/json'});
+const safeTitleJson = (model.meta.title || 'Untitled').replace(/\s+/g, '_');
+saveAs(blob, 'SWOT_' + safeTitleJson + '.json');
+    };
+
+// ---------- EXPORTS ----------
+function htmlForDoc(){
+  const quadrants = [
+    { key: "strengths", label: "Strengths", color: "#059669" },
+    { key: "weaknesses", label: "Weaknesses", color: "#e11d48" },
+    { key: "opportunities", label: "Opportunities", color: "#0284c7" },
+    { key: "threats", label: "Threats", color: "#d97706" }
+  ];
+
+  const cells = quadrants.map(q => {
+    const items = (model[q.key]||[])
+      .map(it => `
+        <li>
+          <span style="color:#000;">${escapeHtml(it.text)}</span>
+          ${it.tag ? ` <em style="color:#64748b">(${escapeHtml(it.tag)})</em>` : ""}
+        </li>
+      `).join("");
+
+    return `
+      <td style="vertical-align:top;width:50%;padding:12px;border:1px solid #ddd;">
+        <h2 style="margin:0 0 6px 0;font-size:18px;color:${q.color};">${q.label}</h2>
+        <ul style="margin:0;padding-left:18px;font-size:13px;list-style-type:disc;">${items}</ul>
+      </td>
+    `;
+  });
+
+  return `
+    <div style="font-family:Inter,Arial,sans-serif;color:#0f172a;">
+      <h1 style="font-size:26px;margin:0 0 6px 0;">SWOT Analysis — ${escapeHtml(model.meta.title||"Untitled")}</h1>
+      <div style="font-size:12px;color:#475569;margin:0 0 14px 0;">
+        Owner: ${escapeHtml(model.meta.owner||"-")} • Date: ${escapeHtml(model.meta.date||"")}
+      </div>
+      <table style="border-collapse:collapse;width:100%;table-layout:fixed;">
+        <tr>${cells[0]}${cells[1]}</tr>
+        <tr>${cells[2]}${cells[3]}</tr>
+      </table>
+      <h3 style="margin:16px 0 6px 0;font-size:16px;">Summary / Insights</h3>
+      <div style="font-size:13px;color:#000;">${nl2br(escapeHtml(model.meta.notes||""))}</div>
+      <h3 style="margin:16px 0 6px 0;font-size:16px;">Assumptions & Scope</h3>
+      <div style="font-size:13px;color:#000;">${nl2br(escapeHtml(model.meta.scope||""))}</div>
+    </div>
+  `;
+}
+
+
+
+// utils
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, s => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "\"": "&quot;",
+    "'": "&#39;"
+  }[s]));
+}
+
+function nl2br(s) {
+  return s.replace(/\n/g,'<br>');
+}
+
+// PNG Export
+qs('#btn-png').onclick = async () => {
+  console.log("PNG export clicked");
+
+  const temp = document.createElement('div');
+  temp.style.cssText = "position:absolute;left:-9999px;top:0;width:900px;background:#fff;padding:20px;font-family:Inter,Arial,sans-serif;color:#0f172a;line-height:1.5;";
+  
+  // Quadrant data
+  const quadrants = [
+    { key: "strengths", label: "Strengths", color: "#059669" },
+    { key: "weaknesses", label: "Weaknesses", color: "#e11d48" },
+    { key: "opportunities", label: "Opportunities", color: "#0284c7" },
+    { key: "threats", label: "Threats", color: "#d97706" }
+  ];
+
+  const cells = quadrants.map(q => {
+    const items = (model[q.key] || [])
+      .map(it => `<li>${escapeHtml(it.text)} <em style="color:#64748b;">(${escapeHtml(it.tag||'Normal')})</em></li>`)
+      .join("");
+    return `
+      <td style="vertical-align:top;width:50%;padding:12px;border:1px solid #ddd;">
+        <h2 style="margin:0 0 6px 0;font-size:18px;color:${q.color};">${q.label}</h2>
+        <ul style="margin:0;padding-left:18px;font-size:13px;list-style-type:disc;">${items}</ul>
+      </td>
+    `;
+  });
+
+  temp.innerHTML = `
+    <h1 style="font-size:26px;margin:0 0 6px 0;">SWOT Analysis — ${escapeHtml(model.meta.title||"Untitled")}</h1>
+    <div style="font-size:12px;color:#475569;margin:0 0 14px 0;">
+      Owner: ${escapeHtml(model.meta.owner||"-")} • Date: ${escapeHtml(model.meta.date||"")}
+    </div>
+    <table style="border-collapse:collapse;width:100%;table-layout:fixed;">
+      <tr>${cells[0]}${cells[1]}</tr>
+      <tr>${cells[2]}${cells[3]}</tr>
+    </table>
+    <h3 style="margin:16px 0 6px 0;font-size:16px;">Summary / Insights</h3>
+    <div style="font-size:13px;">${nl2br(escapeHtml(model.meta.notes||""))}</div>
+    <h3 style="margin:16px 0 6px 0;font-size:16px;">Assumptions & Scope</h3>
+    <div style="font-size:13px;">${nl2br(escapeHtml(model.meta.scope||""))}</div>
+  `;
+
+  document.body.appendChild(temp);
+
+  const canvas = await html2canvas(temp, { scale: 2, backgroundColor: '#ffffff' });
+  document.body.removeChild(temp);
+
+// Save
+const safeTitlePng = (model.meta.title || 'Untitled').replace(/\s+/g, '_');
+canvas.toBlob(b => saveAs(b, 'SWOT_' + safeTitlePng + '.png'));
+};
+
+
+// PDF Export
+qs('#btn-pdf').onclick = ()=> {
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF('p','mm','a4');
+
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
+  const margin = 14;
+  let y = margin;
+
+  // Header
+  pdf.setFont("helvetica","bold");
+  pdf.setFontSize(18);
+  pdf.text(`SWOT Analysis — ${model.meta.title || 'Untitled'}`, margin, y);
+  y += 8;
+
+  pdf.setFontSize(11);
+  pdf.setFont("helvetica","normal");
+  pdf.text(`Owner: ${model.meta.owner || '-'}    Date: ${model.meta.date || ''}`, margin, y);
+  y += 10;
+
+  // Quadrants table
+  const rows = [
+    [
+      { content: "Strengths\n\n" + (model["strengths"]||[]).map(it=>`• ${it.text} (${it.tag||'Normal'})`).join("\n"), styles: { textColor: [5,150,105] }},
+      { content: "Weaknesses\n\n" + (model["weaknesses"]||[]).map(it=>`• ${it.text} (${it.tag||'Normal'})`).join("\n"), styles: { textColor: [225,29,72] }},
+    ],
+    [
+      { content: "Opportunities\n\n" + (model["opportunities"]||[]).map(it=>`• ${it.text} (${it.tag||'Normal'})`).join("\n"), styles: { textColor: [2,132,199] }},
+      { content: "Threats\n\n" + (model["threats"]||[]).map(it=>`• ${it.text} (${it.tag||'Normal'})`).join("\n"), styles: { textColor: [217,119,6] }},
+    ]
+  ];
+
+  pdf.autoTable({
+    startY: y,
+    body: rows,
+    styles: { fontSize: 10, valign: 'top' },
+    theme: 'grid'
+  });
+
+  y = pdf.lastAutoTable.finalY + 10;
+
+  // helper: write long text with pagination
+  function writeMultilineText(title, text) {
+    pdf.setFont("helvetica","bold").setFontSize(12);
+    pdf.text(title, margin, y);
+    y += 6;
+
+    pdf.setFont("helvetica","normal").setFontSize(10);
+    const lines = pdf.splitTextToSize(text || '-', pageWidth - 2*margin);
+
+    for (let i = 0; i < lines.length; i++) {
+      if (y > pageHeight - margin) {
+        pdf.addPage();
+        y = margin;
+      }
+      pdf.text(lines[i], margin, y);
+      y += 5;
+    }
+    y += 6;
+  }
+
+  // Write both sections
+  writeMultilineText("Summary / Insights", model.meta.notes);
+  writeMultilineText("Assumptions & Scope", model.meta.scope);
+
+  // Save
+const safeTitle = (model.meta.title || 'Untitled').replace(/\s+/g, '_');
+pdf.save('SWOT_' + safeTitle + '.pdf');
+};
+
+
+
+
+
+
+// Word Export
+qs('#btn-docx').onclick = () => {
+  console.log("Word export clicked");
+  const content = `
+    <!DOCTYPE html>
+    <html><head><meta charset='utf-8'></head>
+    <body>${htmlForDoc()}</body></html>`;
+
+  // ✅ Will now work after proper script include
+  const blob = htmlDocx.asBlob(content);
+
+const safeTitleDocx = (model.meta.title || 'Untitled').replace(/\s+/g, '_');
+saveAs(blob, 'SWOT_' + safeTitleDocx + '.docx');
+};
+
+
+						
+// ---------- Global AI SWOT ----------
+async function callFullSWOT() {
+  const btn = qs('#ai-full-swot');
+  const originalText = btn.textContent;
+  btn.textContent = 'Generating SWOT...';
+  btn.disabled = true;
+
+  const apiKey = "AIzaSyAZ1r4t6nDffIOw4NcFnhOx3qJbNX7pECI"; // replace with your key
+  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+  const context = qs('#ai-context')?.value.trim() || qs('#title').value.trim();
+  if (!context) {
+    alert("Please enter a Title or AI Context first.");
+    btn.textContent = originalText;
+    btn.disabled = false;
+    return;
+  }
+
+  const prompt = `Generate a full SWOT analysis for the topic: "${context}".
+Return four sections clearly labeled: Strengths, Weaknesses, Opportunities, Threats.
+Each section must contain 5 concise bullet points. Format as:
+
+Strengths:
+- ...
+Weaknesses:
+- ...
+Opportunities:
+- ...
+Threats:
+- ...`;
+
+  try {
+    const res = await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+    });
+    const data = await res.json();
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+    console.log("🔎 Raw AI Output:\n", text); // 👀 Debug
+
+    // Parse into sections (more tolerant)
+    const sections = { strengths: [], weaknesses: [], opportunities: [], threats: [] };
+    let current = null;
+
+    text.split(/\r?\n/).forEach(line => {
+      line = line.trim();
+
+      if (/^(\*\*|#+)?\s*strengths[:]?/i.test(line)) current = "strengths";
+      else if (/^(\*\*|#+)?\s*weaknesses[:]?/i.test(line)) current = "weaknesses";
+      else if (/^(\*\*|#+)?\s*opportunities[:]?/i.test(line)) current = "opportunities";
+      else if (/^(\*\*|#+)?\s*threats[:]?/i.test(line)) current = "threats";
+      else if (current && line) {
+        line = line.replace(/^[-•\d.)]+\s*/, ""); // remove bullets/numbers
+        if (line) sections[current].push(line);
+      }
+    });
+
+    // Render into quadrants
+    for (const k in sections) {
+      const card = qs(`[data-quad="${k}"]`);
+      const output = qs('.ai-output', card);
+
+      output.value = sections[k].join("\n");
+      model[k] = sections[k].map(txt => ({ text: txt, tag: 'Normal' }));
+      card.render();
+    }
+
+    persist();
+  } catch (e) {
+    alert('AI error: ' + (e?.message || e));
+    console.error(e);
+  } finally {
+    btn.textContent = originalText;
+    btn.disabled = false;
+  }
+}
+
+// ✅ Bind once after function is defined
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = qs('#ai-full-swot');
+  if (btn) btn.addEventListener('click', callFullSWOT);
+});
+
+
+  </script>
+</body>
+</html>
